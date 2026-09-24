@@ -27,9 +27,12 @@ function Header() {
     <header className="site-header">
       <div className="container header-inner">
         <Link to="/" className="brand">
-          <span className="brand-mark">KAIA</span>
-          <span className="brand-dot" />
-        </Link>
+  <img
+    src="/images/kaia-logo.png"
+    alt="KAIA"
+    style={{ height: 32, width: 'auto' }}
+  />
+</Link>
 
         <nav className="main-nav">
           <NavLink to="/" end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>

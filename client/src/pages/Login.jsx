@@ -40,7 +40,12 @@ export default function Login() {
   return (
     <div className="auth-bg">
       <div className="auth-card">
-        <h1 className="auth-brand">KAIA</h1>
+        <img
+            src="/images/kaia-logo.png"
+            alt="KAIA"
+            style={{ height: 56, marginBottom: 8 }}
+            />
+
         <p className="auth-tagline">For Causes That Matter</p>
 
         <div className="auth-hint">
