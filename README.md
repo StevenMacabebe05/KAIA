@@ -1,6 +1,6 @@
 # KAIA — For Causes That Matter
 
-A mobile-first web prototype connecting individual supporters with Filipino
+A website prototype connecting individual supporters with Filipino
 NGOs through donations, volunteering, following, and awareness.
 
 **Course:** ITS142P_FOPM01_1Q2627
