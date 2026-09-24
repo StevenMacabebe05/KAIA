@@ -57,6 +57,12 @@ export default function Icon({ name, size = 18, color = 'currentColor', strokeWi
       return <svg {...props}><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg>
     case 'cross':
       return <svg {...props}><path d="M12 2v20M2 12h20"/></svg>
+    case 'bell':
+      return <svg {...props}><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+    case 'check-circle':
+      return <svg {...props}><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="M22 4L12 14l-3-3"/></svg>
+    case 'x':
+      return <svg {...props}><path d="M18 6L6 18M6 6l12 12"/></svg>
     default:
       return null
   }

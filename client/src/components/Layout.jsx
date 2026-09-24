@@ -1,6 +1,7 @@
 import { Outlet, Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Icon from './Icon'
+import NotificationBell from './NotificationBell'
 
 export default function Layout() {
   return (
@@ -27,24 +28,37 @@ function Header() {
     <header className="site-header">
       <div className="container header-inner">
         <Link to="/" className="brand">
-        <img
+          <img
             src="/images/kaia-logo.png"
             alt="KAIA"
             style={{ height: 36, width: 'auto', display: 'block' }}
-        />
+          />
         </Link>
 
         <nav className="main-nav">
-          <NavLink to="/" end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          <NavLink
+            to="/"
+            end
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          >
             Home
           </NavLink>
-          <NavLink to="/discover" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          <NavLink
+            to="/discover"
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          >
             Discover
           </NavLink>
-          <NavLink to="/donate" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          <NavLink
+            to="/donate"
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          >
             Donate
           </NavLink>
-          <NavLink to="/volunteer" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          <NavLink
+            to="/volunteer"
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          >
             Volunteer
           </NavLink>
         </nav>
@@ -52,8 +66,14 @@ function Header() {
         <div className="header-actions">
           {user ? (
             <>
-              <Link to={user.role === 'ngo_rep' ? '/dashboard' : '/my-kaia'} className="user-chip">
-                <span className="avatar">{user.name.charAt(0).toUpperCase()}</span>
+              <NotificationBell />
+              <Link
+                to={user.role === 'ngo_rep' ? '/dashboard' : '/my-kaia'}
+                className="user-chip"
+              >
+                <span className="avatar">
+                  {user.name.charAt(0).toUpperCase()}
+                </span>
                 <span>{user.name.split(' ')[0]}</span>
               </Link>
               <button
@@ -66,8 +86,12 @@ function Header() {
             </>
           ) : (
             <>
-              <Link to="/login" className="btn btn-ghost btn-sm">Log in</Link>
-              <Link to="/signup" className="btn btn-primary btn-sm">Sign up</Link>
+              <Link to="/login" className="btn btn-ghost btn-sm">
+                Log in
+              </Link>
+              <Link to="/signup" className="btn btn-primary btn-sm">
+                Sign up
+              </Link>
             </>
           )}
         </div>
@@ -80,9 +104,13 @@ function Footer() {
   return (
     <footer className="site-footer">
       <div className="container footer-inner">
-        <div>
-          <strong style={{ color: 'var(--blue-700)' }}>KAIA</strong>
-          <span> — For Causes That Matter</span>
+        <div className="row" style={{ gap: 10 }}>
+          <img
+            src="/images/kaia-logo.png"
+            alt="KAIA"
+            style={{ height: 26, width: 'auto' }}
+          />
+          <span className="text-muted">— For Causes That Matter</span>
         </div>
         <div>Usability prototype · Mapúa University Makati · BSIT</div>
       </div>
