@@ -740,3 +740,250 @@ textarea.input { resize: vertical; min-height: 90px; }
 .stat-rich-delta.down {
   color: var(--red-600);
 }
+
+/* =========================================================
+   LIVELY ADDITIONS
+   ========================================================= */
+
+/* ---------- toast ---------- */
+.toast-stack {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 32px rgba(11, 18, 32, 0.15), 0 2px 6px rgba(11, 18, 32, 0.08);
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 280px;
+  max-width: 420px;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease;
+  border-left: 4px solid var(--blue-700);
+}
+
+.toast-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.toast-message { flex: 1; color: var(--ink-900); }
+
+.toast-close {
+  background: none;
+  border: 0;
+  color: var(--ink-500);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+/* ---------- confetti ---------- */
+.confetti-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -20px;
+  border-radius: 2px;
+  animation-name: confetti-fall;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+  animation-fill-mode: forwards;
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0.3; }
+}
+
+/* ---------- amount chips ---------- */
+.amount-chip {
+  padding: 16px 12px;
+  border-radius: var(--radius);
+  border: 2px solid var(--ink-100);
+  background: var(--white);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--blue-700);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.amount-chip:hover {
+  border-color: var(--blue-700);
+  background: var(--blue-50);
+  transform: translateY(-2px);
+}
+
+.amount-chip:active { transform: translateY(0); }
+
+/* ---------- donation impact panel ---------- */
+.donation-impact {
+  background: var(--blue-50);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-top: 8px;
+}
+
+.donation-impact-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--ink-700);
+  padding: 6px 0;
+}
+
+.donation-impact-row + .donation-impact-row {
+  border-top: 1px solid var(--blue-100);
+  margin-top: 6px;
+  padding-top: 12px;
+}
+
+.donation-impact-row strong { color: var(--blue-700); font-weight: 800; }
+
+/* ---------- animated hero ---------- */
+.hero { overflow: hidden; isolation: isolate; }
+
+.hero::before,
+.hero::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.35;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.hero::before {
+  width: 300px; height: 300px;
+  background: var(--orange-500);
+  top: -100px; right: -60px;
+  animation: float-a 12s ease-in-out infinite;
+}
+
+.hero::after {
+  width: 260px; height: 260px;
+  background: #60a5fa;
+  bottom: -120px; left: -80px;
+  animation: float-b 14s ease-in-out infinite;
+}
+
+@keyframes float-a {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-30px, 40px); }
+}
+
+@keyframes float-b {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(40px, -30px); }
+}
+
+.hero > * { position: relative; z-index: 1; }
+
+/* ---------- pulse dot ---------- */
+.pulse-dot {
+  position: relative;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #4ade80;
+  display: inline-block;
+}
+
+.pulse-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #4ade80;
+  animation: pulse-ring 1.6s ease-out infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+/* ---------- shimmering button ---------- */
+.btn-shimmer { position: relative; overflow: hidden; }
+
+.btn-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+  animation: shimmer 2.8s infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  60%, 100% { left: 150%; }
+}
+
+/* ---------- achievements ---------- */
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.achievement {
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--white);
+  border: 1px solid var(--ink-100);
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.achievement.unlocked {
+  background: linear-gradient(135deg, #fff4e8 0%, #eff4ff 100%);
+  border-color: var(--orange-100);
+}
+
+.achievement.locked { opacity: 0.55; }
+
+.achievement-icon {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 10px;
+  background: var(--blue-50);
+  color: var(--blue-700);
+}
+
+.achievement.unlocked .achievement-icon {
+  background: var(--orange-500);
+  color: white;
+}
+
+.achievement-title { font-size: 13px; font-weight: 800; color: var(--ink-900); margin-bottom: 2px; }
+.achievement-desc { font-size: 11px; color: var(--ink-500); font-weight: 500; }
