@@ -3,12 +3,14 @@ import { POSTS } from '../data/posts'
 import { NGOS } from '../data/ngos'
 import { useActivity } from '../store/useActivity'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../components/Toast'
 import EmptyState from '../components/EmptyState'
 import VerifiedBadge from '../components/VerifiedBadge'
 import Icon from '../components/Icon'
 
 export default function Home() {
   const { user } = useAuth()
+  const toast = useToast()
   const store = useActivity()
   const followedIds = user ? store.getFollowedNgoIds(user.id) : []
   const allPosts = [...POSTS, ...store.getExtraPosts()]

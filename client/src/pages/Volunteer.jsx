@@ -4,10 +4,13 @@ import { NGOS } from '../data/ngos'
 import { useActivity } from '../store/useActivity'
 import { useAuth } from '../context/AuthContext'
 import EmptyState from '../components/EmptyState'
+import { useToast } from '../components/Toast'
 import Icon from '../components/Icon'
 
 export default function Volunteer() {
   const { user } = useAuth()
+  const toast = useToast()
+  const [confettiKey, setConfettiKey] = useState(0)
   const store = useActivity()
   const [tab, setTab] = useState('nearby')
 
