@@ -5,6 +5,22 @@ import { POSTS } from '../data/posts'
 import { useActivity } from '../store/useActivity'
 import { useAuth } from '../context/AuthContext'
 import Icon from '../components/Icon'
+import {
+  DonationLineChart,
+  CampaignBarChart,
+  StatusDonut,
+  Sparkline,
+} from '../components/Charts'
+
+/* ---------- sample historical data ---------- */
+const DONATION_TREND = [
+  { month: 'Aug', amount: 4200 },
+  { month: 'Sep', amount: 6800 },
+  { month: 'Oct', amount: 5400 },
+  { month: 'Nov', amount: 9200 },
+  { month: 'Dec', amount: 11500 },
+  { month: 'Jan', amount: 12800 },
+]
 
 export default function NGODashboard() {
   const { user } = useAuth()
@@ -29,6 +45,28 @@ export default function NGODashboard() {
   const totalRaised = campaigns.reduce((s, c) => s + c.raised, 0)
   const activeCampaigns = campaigns.filter((c) => c.status !== 'completed').length
 
+  /* chart data */
+  const campaignChartData = campaigns.slice(0, 4).map((c) => ({
+    name: c.title.length > 18 ? c.title.slice(0, 18) + '…' : c.title,
+    raised: c.raised,
+    goal: c.goal,
+  }))
+
+  const statusCounts = campaigns.reduce((acc, c) => {
+    acc[c.status] = (acc[c.status] || 0) + 1
+    return acc
+  }, {})
+
+  const statusDonutData = [
+    { key: 'urgent', name: 'Urgent', value: statusCounts.urgent || 0 },
+    { key: 'active', name: 'Active', value: statusCounts.active || 0 },
+    { key: 'almost_complete', name: 'Almost Complete', value: statusCounts.almost_complete || 0 },
+    { key: 'completed', name: 'Completed', value: statusCounts.completed || 0 },
+  ].filter((d) => d.value > 0)
+
+  /* sparkline data (last 6 months of the donation trend) */
+  const donationSpark = DONATION_TREND.map((d) => d.amount)
+
   const TILES = [
     { key: 'post', label: 'Create Post', icon: 'megaphone' },
     { key: 'campaign', label: 'Create Campaign', icon: 'heart' },
@@ -45,27 +83,100 @@ export default function NGODashboard() {
       <div className="page-header">
         <h1 className="page-title">NGO Dashboard</h1>
         <p className="page-subtitle">
-          Manage campaigns, volunteers, and updates without depending on an administrator.
+          Manage campaigns, volunteers, and updates. Track performance in real time.
         </p>
       </div>
 
-      <div className="stat-row">
-        <div className="stat-card">
-          <div className="stat-value">₱{totalRaised.toLocaleString()}</div>
-          <div className="stat-label">Total raised</div>
+      {/* ---------- stat cards with sparklines ---------- */}
+      <div className="stat-row" style={{ marginBottom: 24 }}>
+        <div className="stat-card-rich">
+          <div className="stat-rich-top">
+            <div>
+              <div className="stat-rich-value">₱{totalRaised.toLocaleString()}</div>
+              <div className="stat-rich-label">Total raised</div>
+            </div>
+            <Sparkline data={donationSpark} color="#1e40d8" />
+          </div>
+          <div className="stat-rich-delta">↑ 12.4% vs last month</div>
         </div>
-        <div className="stat-card">
-          <div className="stat-value">{activeCampaigns}</div>
-          <div className="stat-label">Active campaigns</div>
+
+        <div className="stat-card-rich">
+          <div className="stat-rich-top">
+            <div>
+              <div className="stat-rich-value">{activeCampaigns}</div>
+              <div className="stat-rich-label">Active campaigns</div>
+            </div>
+            <Sparkline data={[1, 2, 2, 3, 3, 3]} color="#f97316" />
+          </div>
+          <div className="stat-rich-delta">↑ 1 new this month</div>
         </div>
-        <div className="stat-card">
-          <div className="stat-value">2,300</div>
-          <div className="stat-label">Supporters</div>
+
+        <div className="stat-card-rich">
+          <div className="stat-rich-top">
+            <div>
+              <div className="stat-rich-value">2,300</div>
+              <div className="stat-rich-label">Supporters</div>
+            </div>
+            <Sparkline data={[1800, 1950, 2050, 2100, 2200, 2300]} color="#1e40d8" />
+          </div>
+          <div className="stat-rich-delta">↑ 4.3% this week</div>
         </div>
-        <div className="stat-card">
-          <div className="stat-value">{opportunities.length}</div>
-          <div className="stat-label">Volunteer ops</div>
+
+        <div className="stat-card-rich">
+          <div className="stat-rich-top">
+            <div>
+              <div className="stat-rich-value">{opportunities.length}</div>
+              <div className="stat-rich-label">Volunteer ops</div>
+            </div>
+            <Sparkline data={[1, 1, 2, 2, 2, 2]} color="#16a34a" />
+          </div>
+          <div className="stat-rich-delta">Steady</div>
         </div>
+      </div>
+
+      {/* ---------- main charts row ---------- */}
+      <div className="chart-grid">
+        <div className="chart-card">
+          <div className="chart-card-header">
+            <div>
+              <h3 className="chart-title">Donations over time</h3>
+              <p className="chart-subtitle">Last 6 months of contributions</p>
+            </div>
+            <span className="chart-badge">↑ 12.4%</span>
+          </div>
+          <DonationLineChart data={DONATION_TREND} />
+        </div>
+
+        <div className="chart-card">
+          <div className="chart-card-header">
+            <div>
+              <h3 className="chart-title">Campaign status</h3>
+              <p className="chart-subtitle">Live breakdown</p>
+            </div>
+          </div>
+          <StatusDonut data={statusDonutData} />
+        </div>
+      </div>
+
+      {/* ---------- campaign performance ---------- */}
+      <div className="chart-card" style={{ marginBottom: 24 }}>
+        <div className="chart-card-header">
+          <div>
+            <h3 className="chart-title">Campaign performance</h3>
+            <p className="chart-subtitle">Raised vs goal for each active campaign</p>
+          </div>
+          <span className="chart-badge orange">
+            {campaigns.length} campaigns
+          </span>
+        </div>
+        <CampaignBarChart data={campaignChartData} />
+      </div>
+
+      {/* ---------- action tiles ---------- */}
+      <div className="page-header" style={{ marginTop: 32 }}>
+        <h2 className="page-title" style={{ fontSize: 22 }}>
+          Quick actions
+        </h2>
       </div>
 
       <div className="grid grid-4">
@@ -75,16 +186,23 @@ export default function NGODashboard() {
             onClick={() => setModal(t.key)}
             className="card card-hover"
             style={{
-              textAlign: 'left', cursor: 'pointer',
+              textAlign: 'left',
+              cursor: 'pointer',
               border: '1px solid var(--ink-100)',
-              background: 'white', fontFamily: 'inherit',
+              background: 'white',
+              fontFamily: 'inherit',
             }}
           >
             <div
               style={{
-                width: 40, height: 40, borderRadius: 10,
-                background: 'var(--blue-50)', color: 'var(--blue-700)',
-                display: 'grid', placeItems: 'center', marginBottom: 14,
+                width: 40,
+                height: 40,
+                borderRadius: 10,
+                background: 'var(--blue-50)',
+                color: 'var(--blue-700)',
+                display: 'grid',
+                placeItems: 'center',
+                marginBottom: 14,
               }}
             >
               <Icon name={t.icon} size={20} />
@@ -94,6 +212,7 @@ export default function NGODashboard() {
         ))}
       </div>
 
+      {/* ---------- modals ---------- */}
       {modal === 'post' && (
         <PostModal
           onClose={() => setModal(null)}
@@ -140,6 +259,7 @@ export default function NGODashboard() {
   )
 }
 
+/* ---------- modals (unchanged) ---------- */
 function PostModal({ onClose, onSave }) {
   const [content, setContent] = useState('')
   return (
