@@ -37,16 +37,22 @@ export default function CampaignDetail() {
   const liveDonors = campaign.donorCount + myDonations.length
 
   function handleDonate(amount) {
-    if (!user) {
-      navigate('/login')
-      return
-    }
-    store.donate(user.id, campaign.id, amount)
-    setJustDonated(amount)
-    setConfettiKey(Date.now())
-    setCustom('')
-    toast.push(`Thank you! You donated ₱${amount.toLocaleString()}`, 'success')
+  if (!user) {
+    navigate('/login')
+    return
   }
+  store.donate(user.id, campaign.id, amount)
+  store.addNotification(user.id, {
+    type: 'donation',
+    title: `You donated ₱${amount.toLocaleString()}`,
+    body: `to "${campaign.title}" — thank you!`,
+    link: `/campaign/${campaign.id}`,
+  })
+  setJustDonated(amount)
+  setConfettiKey(Date.now())
+  setCustom('')
+  toast.push(`Thank you! You donated ₱${amount.toLocaleString()}`, 'success')
+}
 
   function closeModal() {
     setShowModal(false)
