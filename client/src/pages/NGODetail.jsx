@@ -75,7 +75,7 @@ export default function NGODetail() {
                   <button
                     className="btn btn-accent"
                     onClick={() =>
-                      alert('Demo NGO — campaigns not available in this prototype.\n\nTry Bahay Kalinga Foundation for a full demo.')
+                      alert('Demo NGO — campaigns not available in this prototype.\n\nTry Angat Buhay Foundation for a full demo.')
                     }
                   >
                     Donate

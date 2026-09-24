@@ -40,7 +40,7 @@ export default function RegisterNGO() {
             a verified badge after approval.
           </p>
           <div className="auth-hint" style={{ textAlign: 'left' }}>
-            <strong>Demo note:</strong> this prototype links you to Bahay Kalinga
+            <strong>Demo note:</strong> this prototype links you to Angat Buhay
             Foundation so you can explore the NGO dashboard.
           </div>
           <button

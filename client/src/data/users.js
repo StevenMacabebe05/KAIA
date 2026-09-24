@@ -1,5 +1,3 @@
-// Hardcoded accounts. ONLY these two can log in.
-
 export const HARDCODED_ACCOUNTS = [
   {
     id: 'u-1',
@@ -12,7 +10,7 @@ export const HARDCODED_ACCOUNTS = [
   },
   {
     id: 'u-2',
-    name: 'Bahay Kalinga Rep',
+    name: 'Angat Buhay Rep',
     email: 'ngo@kaia.ph',
     password: 'demo123',
     role: 'ngo_rep',

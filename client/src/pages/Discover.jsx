@@ -16,7 +16,8 @@ export default function Discover() {
 
   const filtered = NGOS.filter((n) => {
     const matchesCategory = category === 'All' || n.categories.includes(category)
-    const matchesQuery = query === '' || n.name.toLowerCase().includes(query.toLowerCase())
+    const matchesQuery =
+      query === '' || n.name.toLowerCase().includes(query.toLowerCase())
     return matchesCategory && matchesQuery
   })
 
@@ -31,7 +32,9 @@ export default function Discover() {
 
       <div className="filters">
         <div className="search">
-          <span className="search-icon"><Icon name="search" size={16} /></span>
+          <span className="search-icon">
+            <Icon name="search" size={16} />
+          </span>
           <input
             placeholder="Search by name…"
             value={query}
@@ -68,31 +71,70 @@ export default function Discover() {
         <div className="grid grid-3">
           {filtered.map((ngo) => {
             const following = user ? store.isFollowing(user.id, ngo.id) : false
+
             return (
               <article key={ngo.id} className="card card-hover">
                 <Link
                   to={`/ngo/${ngo.id}`}
                   style={{ color: 'inherit', display: 'block' }}
                 >
+                  {/* Cover strip */}
                   <img
                     src={ngo.cover}
                     alt=""
-                    style={{ width: '100%', height: 120, borderRadius: 10, objectFit: 'cover', marginBottom: 14 }}
+                    style={{
+                      width: '100%',
+                      height: 100,
+                      borderRadius: 10,
+                      objectFit: 'cover',
+                      marginBottom: -22,
+                    }}
                   />
-                  <div className="row" style={{ marginBottom: 10 }}>
-                    <img
-                      src={ngo.logo}
-                      alt={ngo.name}
-                      style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover' }}
-                    />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, fontSize: 14 }}>{ngo.name}</div>
-                      <div className="text-muted" style={{ fontSize: 12, marginTop: 2 }}>
-                        {ngo.categories.join(' · ')}
-                      </div>
-                    </div>
+
+                  {/* Logo overlapping the cover */}
+                  <img
+                    src={ngo.logo}
+                    alt={ngo.name}
+                    style={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: 14,
+                      objectFit: 'cover',
+                      border: '3px solid white',
+                      background: 'white',
+                      boxShadow: '0 2px 6px rgba(11,18,32,0.08)',
+                      position: 'relative',
+                      marginBottom: 10,
+                    }}
+                  />
+
+                  {/* Name + categories */}
+                  <div
+                    style={{
+                      fontWeight: 700,
+                      fontSize: 15,
+                      marginBottom: 4,
+                      lineHeight: 1.3,
+                    }}
+                  >
+                    {ngo.name}
                   </div>
-                  <p style={{ fontSize: 13, color: 'var(--ink-500)', margin: '0 0 12px', lineHeight: 1.5 }}>
+                  <div
+                    className="text-muted"
+                    style={{ fontSize: 12, marginBottom: 8 }}
+                  >
+                    {ngo.categories.join(' · ')}
+                  </div>
+
+                  {/* Tagline */}
+                  <p
+                    style={{
+                      fontSize: 13,
+                      color: 'var(--ink-500)',
+                      margin: '0 0 12px',
+                      lineHeight: 1.5,
+                    }}
+                  >
                     {ngo.tagline}
                   </p>
                 </Link>
@@ -101,7 +143,9 @@ export default function Discover() {
                   <VerifiedBadge verified={ngo.verified} />
                   {user && (
                     <button
-                      className={`btn btn-sm ${following ? 'btn-ghost' : 'btn-primary'}`}
+                      className={`btn btn-sm ${
+                        following ? 'btn-ghost' : 'btn-primary'
+                      }`}
                       onClick={() => store.toggleFollow(user.id, ngo.id)}
                     >
                       {following ? 'Following' : 'Follow'}

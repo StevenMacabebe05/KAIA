@@ -12,7 +12,8 @@ export const POSTS = [
     id: 'p-2',
     ngoId: 'ngo-1',
     type: 'announcement',
-    content: 'Reading Buddy signups are open — 15 slots for February.',
+    content:
+      'Volunteer signups for our next relief pack assembly are open — 15 slots for February.',
     image: '',
     createdAt: '2026-01-18T09:00:00.000Z',
   },
@@ -20,7 +21,8 @@ export const POSTS = [
     id: 'p-3',
     ngoId: 'ngo-1',
     type: 'update',
-    content: 'New reading corner goal posted. Every peso gets us closer.',
+    content:
+      'Our community learning center renovation just hit 18% funded. Every peso gets us closer.',
     image: '',
     createdAt: '2026-01-17T15:30:00.000Z',
   },
