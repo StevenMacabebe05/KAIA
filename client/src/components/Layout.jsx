@@ -2,6 +2,7 @@ import { Outlet, Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Icon from './Icon'
 import NotificationBell from './NotificationBell'
+import GlobalSearch from './GlobalSearch'
 
 export default function Layout() {
   return (
@@ -64,6 +65,7 @@ function Header() {
         </nav>
 
         <div className="header-actions">
+          <GlobalSearch />
           {user ? (
             <>
               <NotificationBell />

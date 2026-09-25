@@ -5,6 +5,7 @@ import { NGOS } from '../data/ngos'
 import { useActivity } from '../store/useActivity'
 import StatusTag from '../components/StatusTag'
 import ProgressBar from '../components/ProgressBar'
+import SavedButton from '../components/SavedButton'
 import Icon from '../components/Icon'
 
 export default function Donate() {
@@ -49,27 +50,75 @@ export default function Donate() {
         {filtered.map((c) => {
           const ngo = getNgo(c.ngoId)
           return (
-            <Link key={c.id} to={`/campaign/${c.id}`} className="card card-hover" style={{ color: 'inherit', padding: 0, overflow: 'hidden' }}>
-              <img src={c.image} alt="" style={{ width: '100%', height: 160, objectFit: 'cover' }} />
-              <div style={{ padding: 18 }}>
-                <div className="row-between" style={{ marginBottom: 6, alignItems: 'flex-start' }}>
-                  <div style={{ fontWeight: 700, fontSize: 15, flex: 1, lineHeight: 1.35 }}>{c.title}</div>
-                  <StatusTag status={c.status} />
+            <div
+              key={c.id}
+              className="card card-hover"
+              style={{ padding: 0, overflow: 'hidden' }}
+            >
+              <Link
+                to={`/campaign/${c.id}`}
+                style={{ color: 'inherit', display: 'block' }}
+              >
+                <img
+                  src={c.image}
+                  alt=""
+                  style={{ width: '100%', height: 160, objectFit: 'cover' }}
+                />
+                <div style={{ padding: 18 }}>
+                  <div
+                    className="row-between"
+                    style={{
+                      marginBottom: 6,
+                      alignItems: 'flex-start',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontWeight: 700,
+                        fontSize: 15,
+                        flex: 1,
+                        lineHeight: 1.35,
+                      }}
+                    >
+                      {c.title}
+                    </div>
+                    <StatusTag status={c.status} />
+                  </div>
+                  <div
+                    className="text-muted"
+                    style={{ fontSize: 12, marginBottom: 14 }}
+                  >
+                    by {ngo?.name}
+                  </div>
+                  <ProgressBar value={c.raised} goal={c.goal} />
+                  <div
+                    className="row-between"
+                    style={{
+                      marginTop: 14,
+                      fontSize: 12,
+                      color: 'var(--ink-500)',
+                    }}
+                  >
+                    <span className="row" style={{ gap: 5 }}>
+                      <Icon name="users" size={13} /> {c.donorCount} supporters
+                    </span>
+                    <span className="row" style={{ gap: 5 }}>
+                      <Icon name="calendar" size={13} /> {c.daysLeft} days left
+                    </span>
+                  </div>
                 </div>
-                <div className="text-muted" style={{ fontSize: 12, marginBottom: 14 }}>
-                  by {ngo?.name}
-                </div>
-                <ProgressBar value={c.raised} goal={c.goal} />
-                <div className="row-between" style={{ marginTop: 14, fontSize: 12, color: 'var(--ink-500)' }}>
-                  <span className="row" style={{ gap: 5 }}>
-                    <Icon name="users" size={13} /> {c.donorCount} supporters
-                  </span>
-                  <span className="row" style={{ gap: 5 }}>
-                    <Icon name="calendar" size={13} /> {c.daysLeft} days left
-                  </span>
-                </div>
+              </Link>
+
+              <div
+                style={{
+                  padding: '0 18px 18px',
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                }}
+              >
+                <SavedButton campaignId={c.id} />
               </div>
-            </Link>
+            </div>
           )
         })}
       </div>
