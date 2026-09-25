@@ -3,15 +3,23 @@ import { POSTS } from '../data/posts'
 import { NGOS } from '../data/ngos'
 import { useActivity } from '../store/useActivity'
 import { useAuth } from '../context/AuthContext'
-import { useToast } from '../components/Toast'
 import EmptyState from '../components/EmptyState'
 import VerifiedBadge from '../components/VerifiedBadge'
+import HeroCarousel from '../components/HeroCarousel'
 import Icon from '../components/Icon'
+
+const HERO_SLIDES = [
+  { image: '/images/hero/hero-1.jpg' },
+  { image: '/images/hero/hero-2.jpg' },
+  { image: '/images/hero/hero-3.jpg' },
+  { image: '/images/hero/hero-4.jpg' },
+  { image: '/images/hero/hero-5.jpg' },
+]
 
 export default function Home() {
   const { user } = useAuth()
-  const toast = useToast()
   const store = useActivity()
+
   const followedIds = user ? store.getFollowedNgoIds(user.id) : []
   const allPosts = [...POSTS, ...store.getExtraPosts()]
     .filter((p) => followedIds.includes(p.ngoId))
@@ -20,28 +28,59 @@ export default function Home() {
 
   return (
     <div className="container">
-      <section className="hero">
-        <h1>Everyone has something they can contribute.</h1>
-        <p>
-          KAIA connects you with verified Filipino NGOs — donate, volunteer,
-          follow, or simply spread awareness. Support happens in many forms.
-        </p>
-        <div className="hero-actions">
-          <Link to="/discover" className="btn btn-white btn-lg">
-            Discover NGOs
-            <Icon name="arrow-right" size={16} />
-          </Link>
-          <Link to="/donate" className="btn btn-outline-white btn-lg">
-            Browse campaigns
-          </Link>
+      {/* ---------- HERO ---------- */}
+      <section className="hero hero-photo">
+        <HeroCarousel slides={HERO_SLIDES} interval={5500} />
+
+        <div className="hero-content">
+          <div className="hero-eyebrow">
+            <span className="pulse-dot" />
+            Live now · {NGOS.length} NGOs · {allPosts.length} updates
+          </div>
+          <h1>
+            Everyone has something
+            <br />
+            they can{' '}
+            <span className="gradient-text-orange">contribute</span>.
+          </h1>
+          <p>
+            KAIA connects you with verified Filipino NGOs — donate,
+            volunteer, follow, or simply spread awareness. Support
+            happens in many forms.
+          </p>
+          <div className="hero-actions">
+            <Link to="/discover" className="btn btn-white btn-lg btn-shimmer">
+              Discover NGOs
+              <Icon name="arrow-right" size={16} />
+            </Link>
+            <Link to="/donate" className="btn btn-outline-white btn-lg">
+              Browse campaigns
+            </Link>
+          </div>
+          <div className="hero-stats">
+            <div className="hero-stat">
+              <div className="hero-stat-value">6</div>
+              <div className="hero-stat-label">Verified NGOs</div>
+            </div>
+            <div className="hero-stat">
+              <div className="hero-stat-value">₱250k+</div>
+              <div className="hero-stat-label">Raised this month</div>
+            </div>
+            <div className="hero-stat">
+              <div className="hero-stat-value">1,200+</div>
+              <div className="hero-stat-label">Volunteer hours</div>
+            </div>
+          </div>
         </div>
       </section>
 
-      <div className="page-header">
-        <h2 className="page-title">From NGOs you follow</h2>
-        <p className="page-subtitle">
-          Announcements, campaigns, and impact updates in one feed.
-        </p>
+      {/* ---------- FEED HEADER ---------- */}
+      <div className="section-heading">
+        <h2>From NGOs you follow</h2>
+        <div className="section-heading-bar" />
+        <Link to="/discover" className="btn btn-ghost btn-sm">
+          Find more NGOs
+        </Link>
       </div>
 
       {allPosts.length === 0 ? (

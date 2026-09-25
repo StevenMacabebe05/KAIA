@@ -10,6 +10,7 @@ import StatusTag from '../components/StatusTag'
 import EmptyState from '../components/EmptyState'
 import Confetti from '../components/Confetti'
 import AnimatedCounter from '../components/AnimatedCounter'
+import SavedButton from '../components/SavedButton'
 import Icon from '../components/Icon'
 
 const PRESETS = [100, 500, 1000, 2500]
@@ -23,40 +24,48 @@ export default function CampaignDetail() {
 
   const [showModal, setShowModal] = useState(false)
   const [custom, setCustom] = useState('')
-  const [justDonated, setJustDonated] = useState(null)
+  const [justReceipt, setJustReceipt] = useState(null)
   const [confettiKey, setConfettiKey] = useState(0)
 
   const extra = store.getExtraCampaigns().find((c) => c.id === id)
   const campaign = CAMPAIGNS.find((c) => c.id === id) ?? extra
-  if (!campaign) return <div className="container"><EmptyState icon="inbox" title="Campaign not found" /></div>
+  if (!campaign) {
+    return (
+      <div className="container">
+        <EmptyState icon="inbox" title="Campaign not found" />
+      </div>
+    )
+  }
 
   const ngo = NGOS.find((n) => n.id === campaign.ngoId)
-  const myDonations = user ? store.getDonations(user.id).filter((d) => d.campaignId === id) : []
+  const myDonations = user
+    ? store.getDonations(user.id).filter((d) => d.campaignId === id)
+    : []
   const myExtra = myDonations.reduce((s, d) => s + d.amount, 0)
   const liveRaised = campaign.raised + myExtra
   const liveDonors = campaign.donorCount + myDonations.length
 
   function handleDonate(amount) {
-  if (!user) {
-    navigate('/login')
-    return
+    if (!user) {
+      navigate('/login')
+      return
+    }
+    const receipt = store.donate(user.id, campaign.id, amount)
+    store.addNotification(user.id, {
+      type: 'donation',
+      title: `You donated ₱${amount.toLocaleString()}`,
+      body: `to "${campaign.title}" — thank you!`,
+      link: `/receipt/${receipt.id}`,
+    })
+    setJustReceipt(receipt)
+    setConfettiKey(Date.now())
+    setCustom('')
+    toast.push(`Thank you! You donated ₱${amount.toLocaleString()}`, 'success')
   }
-  store.donate(user.id, campaign.id, amount)
-  store.addNotification(user.id, {
-    type: 'donation',
-    title: `You donated ₱${amount.toLocaleString()}`,
-    body: `to "${campaign.title}" — thank you!`,
-    link: `/campaign/${campaign.id}`,
-  })
-  setJustDonated(amount)
-  setConfettiKey(Date.now())
-  setCustom('')
-  toast.push(`Thank you! You donated ₱${amount.toLocaleString()}`, 'success')
-}
 
   function closeModal() {
     setShowModal(false)
-    setJustDonated(null)
+    setJustReceipt(null)
   }
 
   return (
@@ -66,7 +75,13 @@ export default function CampaignDetail() {
       <Link
         to="/donate"
         className="row"
-        style={{ gap: 6, marginBottom: 16, fontSize: 13, fontWeight: 600, color: 'var(--ink-500)' }}
+        style={{
+          gap: 6,
+          marginBottom: 16,
+          fontSize: 13,
+          fontWeight: 600,
+          color: 'var(--ink-500)',
+        }}
       >
         <span style={{ transform: 'rotate(180deg)' }}>
           <Icon name="chevron-right" size={14} />
@@ -83,7 +98,10 @@ export default function CampaignDetail() {
               style={{ width: '100%', height: 320, objectFit: 'cover' }}
             />
             <div style={{ padding: 28 }}>
-              <div className="row-between" style={{ marginBottom: 8, alignItems: 'flex-start', gap: 16 }}>
+              <div
+                className="row-between"
+                style={{ marginBottom: 8, alignItems: 'flex-start', gap: 16 }}
+              >
                 <h1
                   style={{
                     fontSize: 28,
@@ -107,7 +125,14 @@ export default function CampaignDetail() {
 
               <div className="divider" />
 
-              <p style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--ink-700)', margin: 0 }}>
+              <p
+                style={{
+                  fontSize: 15,
+                  lineHeight: 1.7,
+                  color: 'var(--ink-700)',
+                  margin: 0,
+                }}
+              >
                 {campaign.description}
               </p>
             </div>
@@ -117,7 +142,15 @@ export default function CampaignDetail() {
         <aside>
           <div className="card" style={{ position: 'sticky', top: 88 }}>
             <ProgressBar value={liveRaised} goal={campaign.goal} />
-            <div className="row-between" style={{ marginTop: 14, fontSize: 13, color: 'var(--ink-500)' }}>
+
+            <div
+              className="row-between"
+              style={{
+                marginTop: 14,
+                fontSize: 13,
+                color: 'var(--ink-500)',
+              }}
+            >
               <span className="row" style={{ gap: 6 }}>
                 <Icon name="users" size={14} />
                 {liveDonors} supporters
@@ -135,7 +168,15 @@ export default function CampaignDetail() {
             >
               <Icon name="heart" size={16} /> Donate to this campaign
             </button>
-            <p className="text-muted text-center" style={{ marginTop: 12, fontSize: 12 }}>
+
+            <div style={{ marginTop: 10 }}>
+              <SavedButton campaignId={campaign.id} variant="text" />
+            </div>
+
+            <p
+              className="text-muted text-center"
+              style={{ marginTop: 12, fontSize: 12 }}
+            >
               Demo only — no real payment is processed.
             </p>
 
@@ -158,8 +199,7 @@ export default function CampaignDetail() {
       {showModal && (
         <div className="modal-backdrop" onClick={closeModal}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            {justDonated ? (
-              /* ---------- thank-you state ---------- */
+            {justReceipt ? (
               <div style={{ textAlign: 'center', padding: '8px 0' }}>
                 <div
                   style={{
@@ -174,9 +214,7 @@ export default function CampaignDetail() {
                 >
                   <Icon name="heart" size={32} color="var(--orange-500)" />
                 </div>
-                <h2 style={{ margin: '0 0 8px', fontSize: 22 }}>
-                  Thank you!
-                </h2>
+                <h2 style={{ margin: '0 0 8px', fontSize: 22 }}>Thank you!</h2>
                 <p className="text-muted" style={{ marginBottom: 20 }}>
                   Your gift of
                 </p>
@@ -189,42 +227,67 @@ export default function CampaignDetail() {
                     marginBottom: 20,
                   }}
                 >
-                  <AnimatedCounter value={justDonated} prefix="₱" />
+                  <AnimatedCounter value={justReceipt.amount} prefix="₱" />
                 </div>
-                <p className="text-muted" style={{ marginBottom: 24, fontSize: 13 }}>
+                <p
+                  className="text-muted"
+                  style={{ marginBottom: 24, fontSize: 13 }}
+                >
                   goes directly to <strong>{campaign.title}</strong>
                 </p>
 
                 <div className="donation-impact">
                   <div className="donation-impact-row">
                     <span>Your total gifts to this cause</span>
-                    <strong>₱{(myExtra + justDonated).toLocaleString()}</strong>
+                    <strong>₱{myExtra.toLocaleString()}</strong>
                   </div>
                   <div className="donation-impact-row">
                     <span>New campaign progress</span>
                     <strong>
-                      {Math.round(((liveRaised + justDonated) / campaign.goal) * 100)}%
+                      {Math.round((liveRaised / campaign.goal) * 100)}%
                     </strong>
                   </div>
                 </div>
 
-                <button
-                  className="btn btn-primary btn-block btn-lg"
-                  onClick={closeModal}
-                  style={{ marginTop: 20 }}
+                <Link
+                  to={`/receipt/${justReceipt.id}`}
+                  style={{ textDecoration: 'none' }}
                 >
-                  Done
+                  <button
+                    className="btn btn-primary btn-block btn-lg"
+                    style={{ marginTop: 20 }}
+                  >
+                    View receipt
+                  </button>
+                </Link>
+                <button
+                  className="btn btn-neutral btn-block"
+                  style={{ marginTop: 8 }}
+                  onClick={closeModal}
+                >
+                  Close
                 </button>
               </div>
             ) : (
-              /* ---------- amount picker ---------- */
               <>
-                <h2 style={{ marginTop: 0, marginBottom: 4 }}>Make a donation</h2>
-                <p className="text-muted" style={{ marginBottom: 20, fontSize: 13 }}>
+                <h2 style={{ marginTop: 0, marginBottom: 4 }}>
+                  Make a donation
+                </h2>
+                <p
+                  className="text-muted"
+                  style={{ marginBottom: 20, fontSize: 13 }}
+                >
                   Choose an amount. No real payment is processed.
                 </p>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: 8,
+                    marginBottom: 16,
+                  }}
+                >
                   {PRESETS.map((amt) => (
                     <button
                       key={amt}

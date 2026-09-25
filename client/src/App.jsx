@@ -15,6 +15,7 @@ import Volunteer from './pages/Volunteer'
 import MyKaia from './pages/MyKaia'
 import RegisterNGO from './pages/RegisterNGO'
 import NGODashboard from './pages/NGODashboard'
+import Receipt from './pages/Receipt'
 import NotFound from './pages/NotFound'
 
 export default function App() {
@@ -33,6 +34,7 @@ export default function App() {
               <Route path="/donate" element={<Donate />} />
               <Route path="/campaign/:id" element={<CampaignDetail />} />
               <Route path="/volunteer" element={<Volunteer />} />
+              <Route path="/receipt/:id" element={<Receipt />} />
 
               <Route
                 path="/my-kaia"
