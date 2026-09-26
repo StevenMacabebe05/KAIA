@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useActivity } from '../store/useActivity'
@@ -8,7 +7,6 @@ import { NGOS } from '../data/ngos'
 import { ACHIEVEMENTS } from '../data/achievements'
 import Icon from '../components/Icon'
 import ProgressBar from '../components/ProgressBar'
-import VolunteerTicket from '../components/VolunteerTicket'
 import {
   ActivityAreaChart,
   CategoryDonut,
@@ -28,11 +26,9 @@ export default function MyKaia() {
   const { user, logOut } = useAuth()
   const store = useActivity()
   const navigate = useNavigate()
-  const [ticket, setTicket] = useState(null)
 
   if (!user) return null
 
-  /* ---------- sorted, newest-first data ---------- */
   const donations = [...store.getDonations(user.id)].sort(
     (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
   )
@@ -41,7 +37,6 @@ export default function MyKaia() {
   )
   const follows = store.getFollowedNgoIds(user.id)
   const saves = store.getSaved(user.id)
-  const volunteerIds = store.getVolunteerIds(user.id)
   const checkIns = store.getCheckIns(user.id)
 
   const hours = signups
@@ -55,7 +50,6 @@ export default function MyKaia() {
     return all.find((r) => r.ref === donation.ref)
   }
 
-  /* ---------- category breakdown for donut ---------- */
   const categoryMap = {}
   donations.forEach((d) => {
     const c = CAMPAIGNS.find((x) => x.id === d.campaignId)
@@ -108,7 +102,7 @@ export default function MyKaia() {
         </div>
       </div>
 
-      {/* ---------- 4 rich stat cards ---------- */}
+      {/* ---------- stat cards ---------- */}
       <div className="stat-row" style={{ marginBottom: 24 }}>
         <div className="stat-card-rich">
           <div className="stat-rich-top">
@@ -215,69 +209,6 @@ export default function MyKaia() {
                   </div>
                   <ProgressBar value={c.raised} goal={c.goal} />
                 </Link>
-              )
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* ---------- volunteer IDs / QR tickets ---------- */}
-      <div className="chart-card" style={{ marginBottom: 20 }}>
-        <div className="chart-card-header">
-          <div>
-            <h3 className="chart-title">Your volunteer IDs</h3>
-            <p className="chart-subtitle">
-              {volunteerIds.length} active QR{' '}
-              {volunteerIds.length === 1 ? 'ticket' : 'tickets'}
-            </p>
-          </div>
-        </div>
-
-        {volunteerIds.length === 0 ? (
-          <p className="text-muted" style={{ fontSize: 13 }}>
-            Sign up for a volunteer opportunity to receive your QR ID.
-          </p>
-        ) : (
-          <div className="grid grid-2">
-            {volunteerIds.map((vid) => {
-              const opp = OPPORTUNITIES.find((o) => o.id === vid.opportunityId)
-              const attended = checkIns.some((c) => c.volunteerIdId === vid.id)
-              return (
-                <div key={vid.id} className="card" style={{ padding: 14 }}>
-                  <div className="row-between" style={{ marginBottom: 8 }}>
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ fontWeight: 700, fontSize: 14 }}>
-                        {opp?.title ?? 'Volunteer ID'}
-                      </div>
-                      <div className="text-muted" style={{ fontSize: 12 }}>
-                        {opp?.location} · {opp?.date}
-                      </div>
-                    </div>
-                    {attended && (
-                      <span
-                        className="badge"
-                        style={{ background: '#dcfce7', color: '#15803d' }}
-                      >
-                        ✓ Attended
-                      </span>
-                    )}
-                  </div>
-                  <div
-                    className="receipt-ref"
-                    style={{ display: 'inline-block', fontSize: 12 }}
-                  >
-                    {vid.code}
-                  </div>
-                  <button
-                    className="btn btn-primary btn-sm btn-block"
-                    style={{ marginTop: 12 }}
-                    onClick={() =>
-                      setTicket({ volunteerId: vid, opportunity: opp })
-                    }
-                  >
-                    View QR ticket
-                  </button>
-                </div>
               )
             })}
           </div>
@@ -403,7 +334,6 @@ export default function MyKaia() {
 
       {/* ---------- recent activity ---------- */}
       <div className="chart-grid-2" style={{ marginTop: 20 }}>
-        {/* Donations — newest first */}
         <div className="chart-card">
           <div className="chart-card-header">
             <h3 className="chart-title">Recent donations</h3>
@@ -467,10 +397,9 @@ export default function MyKaia() {
           )}
         </div>
 
-        {/* Signups — newest first */}
         <div className="chart-card">
           <div className="chart-card-header">
-            <h3 className="chart-title">Volunteer signups</h3>
+            <h3 className="chart-title">Volunteer history</h3>
             <span className="chart-subtitle">{signups.length} total</span>
           </div>
           {signups.length === 0 ? (
@@ -483,11 +412,8 @@ export default function MyKaia() {
                 const o = OPPORTUNITIES.find(
                   (x) => x.id === s.opportunityId
                 )
-                const attended = checkIns.some(
-                  (c) =>
-                    c.userId === s.userId &&
-                    c.opportunityId === s.opportunityId
-                )
+                const isCancelled = s.status === 'cancelled'
+                const attended = s.status === 'attended'
                 return (
                   <div
                     key={s.createdAt}
@@ -495,7 +421,16 @@ export default function MyKaia() {
                     style={{ padding: '10px 0' }}
                   >
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: 14 }}>
+                      <div
+                        style={{
+                          fontWeight: 600,
+                          fontSize: 14,
+                          textDecoration: isCancelled
+                            ? 'line-through'
+                            : 'none',
+                          opacity: isCancelled ? 0.6 : 1,
+                        }}
+                      >
                         {o?.title ?? 'Opportunity'}
                       </div>
                       <div
@@ -505,7 +440,7 @@ export default function MyKaia() {
                           textTransform: 'capitalize',
                         }}
                       >
-                        {attended ? 'attended' : s.status} ·{' '}
+                        {s.status} ·{' '}
                         {new Date(s.createdAt).toLocaleString('en-US', {
                           month: 'short',
                           day: 'numeric',
@@ -513,10 +448,23 @@ export default function MyKaia() {
                         })}
                       </div>
                     </div>
-                    {attended ? (
+                    {isCancelled ? (
                       <span
                         className="badge"
-                        style={{ background: '#dcfce7', color: '#15803d' }}
+                        style={{
+                          background: '#fee2e2',
+                          color: 'var(--red-600)',
+                        }}
+                      >
+                        Cancelled
+                      </span>
+                    ) : attended ? (
+                      <span
+                        className="badge"
+                        style={{
+                          background: '#dcfce7',
+                          color: '#15803d',
+                        }}
                       >
                         ✓
                       </span>
@@ -534,15 +482,6 @@ export default function MyKaia() {
           )}
         </div>
       </div>
-
-      {/* ---------- ticket modal ---------- */}
-      {ticket && (
-        <VolunteerTicket
-          volunteerId={ticket.volunteerId}
-          opportunity={ticket.opportunity}
-          onClose={() => setTicket(null)}
-        />
-      )}
     </div>
   )
 }

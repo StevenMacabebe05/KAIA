@@ -4,11 +4,13 @@ import { NGOS } from '../data/ngos'
 import { useActivity } from '../store/useActivity'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../components/Toast'
+import { getCancellationWindow } from '../utils/cancellation'
 import EmptyState from '../components/EmptyState'
 import Confetti from '../components/Confetti'
 import VolunteerTicket from '../components/VolunteerTicket'
 import VolunteerApplicationForm from '../components/VolunteerApplicationForm'
 import VolunteerDetailModal from '../components/VolunteerDetailModal'
+import CancelVolunteerModal from '../components/CancelVolunteerModal'
 import Icon from '../components/Icon'
 
 export default function Volunteer() {
@@ -19,11 +21,26 @@ export default function Volunteer() {
   const [tab, setTab] = useState('nearby')
   const [confettiKey, setConfettiKey] = useState(0)
   const [ticket, setTicket] = useState(null)
-  const [detail, setDetail] = useState(null)   // opportunity being viewed
-  const [applying, setApplying] = useState(null) // opportunity being applied to
+  const [detail, setDetail] = useState(null)
+  const [applying, setApplying] = useState(null)
+  const [cancelling, setCancelling] = useState(null)
 
   const all = [...OPPORTUNITIES, ...store.getExtraOpportunities()]
+
+  const getSignupStatus = (opportunityId) => {
+    if (!user) return 'none'
+    const signup = store.getSignup(user.id, opportunityId)
+    if (!signup) return 'none'
+    return signup.status
+  }
+
+  const isSignedUp = (opportunityId) => {
+    const s = getSignupStatus(opportunityId)
+    return s === 'registered' || s === 'attended' || s === 'completed'
+  }
+
   const filtered = all.filter((o) => {
+    if (getSignupStatus(o.id) === 'cancelled') return false
     if (tab === 'nearby') return o.location === 'Quezon City'
     if (tab === 'this-week') {
       const d = new Date(o.date)
@@ -35,30 +52,21 @@ export default function Volunteer() {
   })
 
   const getNgo = (id) => NGOS.find((n) => n.id === id)
-  const mySignups = user ? store.getSignups(user.id) : []
-  const isSignedUp = (id) => mySignups.some((s) => s.opportunityId === id)
 
-  /* -------- helpers -------- */
   function openDetail(opp) {
     setDetail(opp)
   }
 
   function openTicket(opp) {
-    let vid = store.getVolunteerId(user.id, opp.id)
-    if (!vid) {
-      // recover: create volunteer ID on the fly for older signups
-      const result = store.signUpForOpportunity(user.id, opp.id)
-      vid = result?.volunteerId
-    }
+    const vid = store.getVolunteerId(user.id, opp.id)
     if (vid) {
       setDetail(null)
       setTicket({ volunteerId: vid, opportunity: opp })
     } else {
-      toast.push('Could not open ticket. Please try again.', 'error')
+      toast.push('No active ticket found. Please apply again.', 'info')
     }
   }
 
-  /* -------- flow actions -------- */
   function handleApplyFromDetail() {
     const opp = detail
     setDetail(null)
@@ -93,6 +101,21 @@ export default function Volunteer() {
     toast.push('Application submitted — you are confirmed!', 'success')
   }
 
+  function handleCancelConfirm(reason) {
+    const opp = cancelling
+    const res = store.cancelVolunteer(user.id, opp.id, reason)
+    if (res.ok) {
+      store.addNotification(user.id, {
+        type: 'signup',
+        title: 'Volunteer signup cancelled',
+        body: `You cancelled "${opp.title}". Reason: ${reason}`,
+        link: '/volunteer',
+      })
+      toast.push('Signup cancelled — the NGO has been notified.', 'info')
+    }
+    setCancelling(null)
+  }
+
   return (
     <div className="container">
       <Confetti trigger={confettiKey} />
@@ -100,8 +123,8 @@ export default function Volunteer() {
       <div className="page-header">
         <h1 className="page-title">Volunteer opportunities</h1>
         <p className="page-subtitle">
-          Browse opportunities, review the details, then apply for your QR
-          volunteer ID.
+          Browse events, review the details, then apply for your QR volunteer
+          ID.
         </p>
       </div>
 
@@ -124,14 +147,15 @@ export default function Volunteer() {
       {filtered.length === 0 ? (
         <EmptyState
           icon="inbox"
-          title="No opportunities"
-          message="Try another filter."
+          title="No opportunities match"
+          message="Try a different filter."
         />
       ) : (
         <div className="grid grid-2">
           {filtered.map((o) => {
             const ngo = getNgo(o.ngoId)
             const signed = isSignedUp(o.id)
+            const window = getCancellationWindow(o.date)
 
             return (
               <article
@@ -152,7 +176,13 @@ export default function Volunteer() {
                   }}
                 />
 
-                <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>
+                <div
+                  style={{
+                    fontWeight: 700,
+                    fontSize: 16,
+                    marginBottom: 6,
+                  }}
+                >
                   {o.title}
                 </div>
 
@@ -206,14 +236,25 @@ export default function Volunteer() {
                   </span>
 
                   {signed ? (
-                    <button
-                      type="button"
-                      className="btn btn-ghost"
-                      onClick={() => openTicket(o)}
-                    >
-                      <Icon name="book" size={14} />
-                      View QR ID
-                    </button>
+                    <div className="row" style={{ gap: 6 }}>
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => openTicket(o)}
+                      >
+                        <Icon name="book" size={13} />
+                        QR ID
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-neutral btn-sm"
+                        disabled={!window.allowed}
+                        title={window.message}
+                        onClick={() => setCancelling(o)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   ) : (
                     <button
                       type="button"
@@ -231,7 +272,6 @@ export default function Volunteer() {
         </div>
       )}
 
-      {/* -------- detail modal -------- */}
       {detail && (
         <VolunteerDetailModal
           opportunity={detail}
@@ -243,25 +283,31 @@ export default function Volunteer() {
         />
       )}
 
-      {/* -------- application form -------- */}
       {applying && (
         <VolunteerApplicationForm
           opportunity={applying}
           ngo={getNgo(applying.ngoId)}
           onClose={() => {
             setApplying(null)
-            setDetail(applying) // back to detail
+            setDetail(applying)
           }}
           onSubmit={handleApplicationSubmit}
         />
       )}
 
-      {/* -------- QR ticket -------- */}
       {ticket && (
         <VolunteerTicket
           volunteerId={ticket.volunteerId}
           opportunity={ticket.opportunity}
           onClose={() => setTicket(null)}
+        />
+      )}
+
+      {cancelling && (
+        <CancelVolunteerModal
+          opportunity={cancelling}
+          onClose={() => setCancelling(null)}
+          onConfirm={handleCancelConfirm}
         />
       )}
     </div>
