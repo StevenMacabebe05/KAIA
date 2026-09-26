@@ -64,7 +64,7 @@ export default function CampaignDetail() {
       link: `/receipt/${receipt.id}`,
     })
     setJustReceipt(receipt)
-    setConfettiKey(Date.now())
+    setConfettiKey((k) => k + 1)
     setCustom('')
     toast.push(`Thank you! You donated ₱${amount.toLocaleString()}`, 'success')
   }
@@ -78,7 +78,6 @@ export default function CampaignDetail() {
     <div className="container">
       <Confetti trigger={confettiKey} />
 
-      {/* back link */}
       <Link
         to="/donate"
         className="row"
@@ -96,7 +95,7 @@ export default function CampaignDetail() {
         Back to campaigns
       </Link>
 
-      {/* ---------- HERO IMAGE ---------- */}
+      {/* ---------- HERO ---------- */}
       <div className="campaign-hero">
         <img src={campaign.image} alt="" className="campaign-hero-img" />
         <div className="campaign-hero-overlay">
@@ -105,13 +104,8 @@ export default function CampaignDetail() {
           </div>
           <div className="campaign-hero-bottom">
             <h1 className="campaign-hero-title">{campaign.title}</h1>
-            <Link
-              to={`/ngo/${ngo?.id}`}
-              className="campaign-hero-ngo"
-            >
-              {ngo?.logo && (
-                <img src={ngo.logo} alt="" />
-              )}
+            <Link to={`/ngo/${ngo?.id}`} className="campaign-hero-ngo">
+              {ngo?.logo && <img src={ngo.logo} alt="" />}
               <span>by {ngo?.name}</span>
               <VerifiedBadge verified={ngo?.verified} />
             </Link>
@@ -124,7 +118,6 @@ export default function CampaignDetail() {
         className="grid"
         style={{ gridTemplateColumns: '2fr 1fr', gap: 24, marginTop: 28 }}
       >
-        {/* LEFT */}
         <div>
           {/* quick facts */}
           <div className="campaign-facts">
@@ -178,7 +171,7 @@ export default function CampaignDetail() {
             <p className="campaign-body-text">{campaign.description}</p>
           </div>
 
-          {/* how it will be used */}
+          {/* breakdown */}
           {breakdown.length > 0 && (
             <div className="chart-card" style={{ marginBottom: 20 }}>
               <div className="chart-card-header">
@@ -218,7 +211,7 @@ export default function CampaignDetail() {
             </div>
           )}
 
-          {/* impact examples */}
+          {/* impact */}
           {campaign.impactExamples?.length > 0 && (
             <div className="chart-card">
               <div className="chart-card-header">
@@ -243,7 +236,7 @@ export default function CampaignDetail() {
           )}
         </div>
 
-        {/* RIGHT sidebar */}
+        {/* sidebar */}
         <aside>
           <div className="card" style={{ position: 'sticky', top: 88 }}>
             <div className="campaign-sidebar-header">

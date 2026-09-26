@@ -50,7 +50,7 @@ export default function VolunteerTicket({ volunteerId, opportunity, onClose }) {
       try {
         await navigator.share({ title: 'KAIA Volunteer Ticket', text, url })
       } catch {
-        // user cancelled
+        /* user cancelled */
       }
     } else {
       navigator.clipboard.writeText(`${text}\n${url}`)
@@ -61,7 +61,6 @@ export default function VolunteerTicket({ volunteerId, opportunity, onClose }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="ticket-modal-wrapper" onClick={(e) => e.stopPropagation()}>
-        {/* ticket itself — this is what gets downloaded */}
         <div ref={ticketRef} className="volunteer-ticket">
           <div className="vt-header">
             <img
@@ -116,7 +115,6 @@ export default function VolunteerTicket({ volunteerId, opportunity, onClose }) {
           </div>
         </div>
 
-        {/* actions (not downloaded) */}
         <div className="ticket-actions-bar">
           <div className="ticket-action-row">
             <button

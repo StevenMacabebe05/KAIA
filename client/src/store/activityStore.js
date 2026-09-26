@@ -16,10 +16,6 @@ const EMPTY = {
   applications: [],
 }
 
-/* =========================================================
-   SEED DATA (demo content on first launch)
-   ========================================================= */
-
 const now = Date.now()
 const days = (n) => new Date(now - n * 24 * 60 * 60 * 1000).toISOString()
 
@@ -188,10 +184,9 @@ export const activityStore = {
     save(state)
   },
 
-  /* ---------- follows ---------- */
+  /* follows */
   isFollowing: (userId, ngoId) =>
     state.follows.some((f) => f.userId === userId && f.ngoId === ngoId),
-
   toggleFollow: (userId, ngoId) => {
     const exists = state.follows.find(
       (f) => f.userId === userId && f.ngoId === ngoId
@@ -201,11 +196,10 @@ export const activityStore = {
     save(state)
     return !exists
   },
-
   getFollowedNgoIds: (userId) =>
     state.follows.filter((f) => f.userId === userId).map((f) => f.ngoId),
 
-  /* ---------- donations ---------- */
+  /* donations */
   donate: (userId, campaignId, amount) => {
     const ref = 'KA-' + Date.now().toString(36).toUpperCase()
     const receipt = {
@@ -227,29 +221,22 @@ export const activityStore = {
     save(state)
     return receipt
   },
-
   getDonations: (userId) =>
     state.donations
       .filter((d) => d.userId === userId)
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
-
   getTotalDonated: (userId) =>
     state.donations
       .filter((d) => d.userId === userId)
       .reduce((sum, d) => sum + d.amount, 0),
-
   getReceipt: (id) => state.receipts.find((r) => r.id === id),
 
-  /* ---------- volunteer signups ---------- */
+  /* volunteer signups */
   signUpForOpportunity: (userId, opportunityId, applicationDetails = {}) => {
     const existing = state.signups.find(
       (s) => s.userId === userId && s.opportunityId === opportunityId
     )
-
-    if (existing && existing.status !== 'cancelled') {
-      return null
-    }
-
+    if (existing && existing.status !== 'cancelled') return null
     if (existing && existing.status === 'cancelled') {
       state.signups = state.signups.filter((s) => s !== existing)
       state.volunteerIds = state.volunteerIds.filter(
@@ -311,11 +298,6 @@ export const activityStore = {
       (s) => s.userId === userId && s.status !== 'cancelled'
     ),
 
-  getCancelledSignups: (userId) =>
-    state.signups.filter(
-      (s) => s.userId === userId && s.status === 'cancelled'
-    ),
-
   getSignup: (userId, opportunityId) =>
     state.signups.find(
       (s) => s.userId === userId && s.opportunityId === opportunityId
@@ -374,7 +356,7 @@ export const activityStore = {
     return null
   },
 
-  /* ---------- applications ---------- */
+  /* applications */
   getApplication: (userId, opportunityId) =>
     state.applications.find(
       (a) => a.userId === userId && a.opportunityId === opportunityId
@@ -406,7 +388,7 @@ export const activityStore = {
       .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
   },
 
-  /* ---------- volunteer IDs ---------- */
+  /* volunteer IDs */
   getVolunteerId: (userId, opportunityId) =>
     state.volunteerIds.find(
       (v) =>
@@ -421,7 +403,7 @@ export const activityStore = {
       (v) => v.userId === userId && !v.revoked
     ),
 
-  /* ---------- check-ins ---------- */
+  /* check-ins */
   checkIn: (code, scannerNgoId) => {
     const volunteerId = state.volunteerIds.find(
       (v) => v.code === code && !v.revoked
@@ -461,7 +443,7 @@ export const activityStore = {
   getCheckInsForNgo: (opportunityIds) =>
     state.checkins.filter((c) => opportunityIds.includes(c.opportunityId)),
 
-  /* ---------- saves ---------- */
+  /* saves */
   isSaved: (userId, campaignId) =>
     state.saves.some(
       (s) => s.userId === userId && s.campaignId === campaignId
@@ -477,7 +459,7 @@ export const activityStore = {
   },
   getSaved: (userId) => state.saves.filter((s) => s.userId === userId),
 
-  /* ---------- NGO dashboard creations ---------- */
+  /* NGO dashboard creations */
   createPost: (post) => {
     state.extraPosts.push({
       id: `p-new-${Date.now()}`,
@@ -509,7 +491,7 @@ export const activityStore = {
   getExtraCampaigns: () => state.extraCampaigns,
   getExtraOpportunities: () => state.extraOpportunities,
 
-  /* ---------- notifications ---------- */
+  /* notifications */
   addNotification: (
     userId,
     { type = 'system', title, body = '', link = null }
@@ -557,7 +539,7 @@ export const activityStore = {
     save(state)
   },
 
-  /* ---------- comments ---------- */
+  /* comments */
   getComments: (postId) => state.comments.filter((c) => c.postId === postId),
   addComment: (postId, userId, userName, text) => {
     if (!text.trim()) return

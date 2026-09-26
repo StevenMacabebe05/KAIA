@@ -104,7 +104,6 @@ export default function VolunteerApplicationForm({
         </div>
 
         <form onSubmit={handleSubmit} className="application-form">
-          {/* -------- Personal details -------- */}
           <div className="application-section">
             <div className="application-section-title">Your details</div>
 
@@ -174,7 +173,6 @@ export default function VolunteerApplicationForm({
             </div>
           </div>
 
-          {/* -------- Emergency contact -------- */}
           <div className="application-section">
             <div className="application-section-title">
               Emergency contact
@@ -207,7 +205,6 @@ export default function VolunteerApplicationForm({
             </div>
           </div>
 
-          {/* -------- Availability -------- */}
           <div className="application-section">
             <div className="application-section-title">
               Availability & skills
@@ -245,7 +242,6 @@ export default function VolunteerApplicationForm({
             </div>
           </div>
 
-          {/* -------- Agreement -------- */}
           <div className="application-section">
             <label className="checkbox-row">
               <input

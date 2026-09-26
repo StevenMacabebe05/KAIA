@@ -109,7 +109,7 @@ export const OPPORTUNITIES = [
     needed: 25,
     registered: 8,
     skills: [],
-    image: 'https://placehold.co/800x400/eff4ff/0ea5e9?text=Coastal+Cleanup',
+    image: 'https://placehold.co/800x400/eff6ff/0ea5e9?text=Coastal+Cleanup',
   },
   {
     id: 'vol-5',
@@ -153,7 +153,7 @@ export const OPPORTUNITIES = [
     ],
     requirements: [
       'Willing to walk on muddy terrain',
-      'Wear old clothes you don\'t mind getting wet',
+      "Wear old clothes you don't mind getting wet",
       'Bring extra water and a change of clothes',
       'Basic swimming skills recommended',
     ],

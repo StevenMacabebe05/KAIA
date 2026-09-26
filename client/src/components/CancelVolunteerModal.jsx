@@ -40,13 +40,13 @@ export default function CancelVolunteerModal({
             <h2 style={{ margin: '0 0 8px', fontSize: 20 }}>
               Registration cancelled
             </h2>
-            <p className="text-muted" style={{ marginBottom: 20, fontSize: 13 }}>
+            <p
+              className="text-muted"
+              style={{ marginBottom: 20, fontSize: 13 }}
+            >
               Your spot has been released. The NGO has been notified.
             </p>
-            <button
-              className="btn btn-primary btn-block"
-              onClick={onClose}
-            >
+            <button className="btn btn-primary btn-block" onClick={onClose}>
               Done
             </button>
           </div>

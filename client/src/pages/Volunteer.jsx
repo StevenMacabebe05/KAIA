@@ -95,7 +95,7 @@ export default function Volunteer() {
       link: '/my-kaia',
     })
 
-    setConfettiKey(Date.now())
+    setConfettiKey((k) => k + 1)
     setTicket({ volunteerId, opportunity: opp })
     setApplying(null)
     toast.push('Application submitted — you are confirmed!', 'success')

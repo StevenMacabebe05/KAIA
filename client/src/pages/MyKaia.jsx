@@ -37,7 +37,6 @@ export default function MyKaia() {
   )
   const follows = store.getFollowedNgoIds(user.id)
   const saves = store.getSaved(user.id)
-  const checkIns = store.getCheckIns(user.id)
 
   const hours = signups
     .filter((s) => s.status === 'completed' || s.status === 'attended')
@@ -92,7 +91,10 @@ export default function MyKaia() {
             >
               {user.name}
             </h1>
-            <div className="text-muted" style={{ fontSize: 14, marginTop: 2 }}>
+            <div
+              className="text-muted"
+              style={{ fontSize: 14, marginTop: 2 }}
+            >
               {user.email}
             </div>
           </div>
