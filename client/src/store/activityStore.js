@@ -100,7 +100,7 @@ export const activityStore = {
     save(state)
   },
 
-  /* follows */
+  /* ---------- follows ---------- */
   isFollowing: (userId, ngoId) =>
     state.follows.some((f) => f.userId === userId && f.ngoId === ngoId),
   toggleFollow: (userId, ngoId) => {
@@ -115,7 +115,7 @@ export const activityStore = {
   getFollowedNgoIds: (userId) =>
     state.follows.filter((f) => f.userId === userId).map((f) => f.ngoId),
 
-  /* donations */
+  /* ---------- donations ---------- */
   donate: (userId, campaignId, amount) => {
     const ref = 'KA-' + Date.now().toString(36).toUpperCase()
     const receipt = {
@@ -147,32 +147,52 @@ export const activityStore = {
       .reduce((sum, d) => sum + d.amount, 0),
   getReceipt: (id) => state.receipts.find((r) => r.id === id),
 
-  /* volunteer signups + application details */
+  /* ---------- volunteer signups ---------- */
   signUpForOpportunity: (userId, opportunityId, applicationDetails = {}) => {
-    const exists = state.signups.find(
+    // look for an existing signup
+    const existing = state.signups.find(
       (s) => s.userId === userId && s.opportunityId === opportunityId
     )
-    if (exists) return null
 
-    const hours = applicationDetails.hours || 0
+    // if a non-cancelled signup exists, do not allow a new one
+    if (existing && existing.status !== 'cancelled') {
+      return null
+    }
+
+    // if there was a cancelled signup, remove it (and its volunteer id)
+    // so we can create a fresh one
+    if (existing && existing.status === 'cancelled') {
+      state.signups = state.signups.filter((s) => s !== existing)
+      state.volunteerIds = state.volunteerIds.filter(
+        (v) =>
+          !(
+            v.userId === userId &&
+            v.opportunityId === opportunityId
+          )
+      )
+    }
 
     const signup = {
       userId,
       opportunityId,
-      hours,
+      hours: applicationDetails.hours || 0,
       status: 'registered',
       createdAt: new Date().toISOString(),
     }
     state.signups.push(signup)
 
-    // store application details if provided
     if (applicationDetails.name) {
+      // remove any old application for this user+opp, then add new
+      state.applications = state.applications.filter(
+        (a) => !(a.userId === userId && a.opportunityId === opportunityId)
+      )
       state.applications.push({
         id: 'app-' + Date.now(),
         userId,
         opportunityId,
         name: applicationDetails.name,
         age: applicationDetails.age,
+        email: applicationDetails.email || '',
         phone: applicationDetails.phone,
         address: applicationDetails.address,
         emergencyName: applicationDetails.emergencyName,
@@ -183,7 +203,6 @@ export const activityStore = {
       })
     }
 
-    // issue volunteer ID
     const volunteerId = {
       id: 'vid-' + Date.now(),
       code: makeVolunteerCode(),
@@ -202,6 +221,26 @@ export const activityStore = {
     state.signups
       .filter((s) => s.userId === userId)
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
+
+  /* only active signups (not cancelled) */
+  getActiveSignups: (userId) =>
+    state.signups.filter(
+      (s) => s.userId === userId && s.status !== 'cancelled'
+    ),
+
+  getSignup: (userId, opportunityId) =>
+    state.signups.find(
+      (s) => s.userId === userId && s.opportunityId === opportunityId
+    ),
+
+  /* was this user's signup cancelled? */
+  wasCancelled: (userId, opportunityId) => {
+    const s = state.signups.find(
+      (x) => x.userId === userId && x.opportunityId === opportunityId
+    )
+    return s && s.status === 'cancelled' ? s : null
+  },
+
   getTotalHours: (userId) =>
     state.signups
       .filter(
@@ -211,14 +250,78 @@ export const activityStore = {
       )
       .reduce((sum, s) => sum + (s.hours || 0), 0),
 
+  /* ---------- cancel volunteer ---------- */
+  cancelVolunteer: (userId, opportunityId, reason) => {
+    const signup = state.signups.find(
+      (s) => s.userId === userId && s.opportunityId === opportunityId
+    )
+    if (!signup) return { ok: false, reason: 'not_found' }
+    if (signup.status === 'cancelled')
+      return { ok: false, reason: 'already_cancelled' }
+
+    signup.status = 'cancelled'
+    signup.cancelledAt = new Date().toISOString()
+    signup.cancellationReason = reason
+
+    // revoke the volunteer ID
+    const vid = state.volunteerIds.find(
+      (v) =>
+        v.userId === userId &&
+        v.opportunityId === opportunityId &&
+        !v.revoked
+    )
+    if (vid) vid.revoked = true
+
+    save(state)
+    return { ok: true }
+  },
+
+  getCancellation: (userId, opportunityId) => {
+    const signup = state.signups.find(
+      (s) => s.userId === userId && s.opportunityId === opportunityId
+    )
+    if (signup && signup.status === 'cancelled') {
+      return {
+        reason: signup.cancellationReason,
+        at: signup.cancelledAt,
+      }
+    }
+    return null
+  },
+
+  /* ---------- applications ---------- */
   getApplication: (userId, opportunityId) =>
     state.applications.find(
       (a) => a.userId === userId && a.opportunityId === opportunityId
     ),
+
   getApplicationsForOpportunity: (opportunityId) =>
     state.applications.filter((a) => a.opportunityId === opportunityId),
 
-  /* volunteer IDs */
+  getApplicationsForNgo: (opportunityIds) => {
+    return state.applications
+      .filter((a) => opportunityIds.includes(a.opportunityId))
+      .map((a) => {
+        const signup = state.signups.find(
+          (s) =>
+            s.userId === a.userId && s.opportunityId === a.opportunityId
+        )
+        const checkin = state.checkins.find(
+          (c) =>
+            c.userId === a.userId && c.opportunityId === a.opportunityId
+        )
+        return {
+          ...a,
+          status: checkin ? 'attended' : signup?.status || 'registered',
+          cancellationReason: signup?.cancellationReason || null,
+          cancelledAt: signup?.cancelledAt || null,
+          checkedInAt: checkin?.checkedInAt || null,
+        }
+      })
+      .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
+  },
+
+  /* ---------- volunteer IDs ---------- */
   getVolunteerId: (userId, opportunityId) =>
     state.volunteerIds.find(
       (v) =>
@@ -229,9 +332,11 @@ export const activityStore = {
   getVolunteerIdByCode: (code) =>
     state.volunteerIds.find((v) => v.code === code && !v.revoked),
   getVolunteerIds: (userId) =>
-    state.volunteerIds.filter((v) => v.userId === userId && !v.revoked),
+    state.volunteerIds.filter(
+      (v) => v.userId === userId && !v.revoked
+    ),
 
-  /* check-ins */
+  /* ---------- check-ins ---------- */
   checkIn: (code, scannerNgoId) => {
     const volunteerId = state.volunteerIds.find(
       (v) => v.code === code && !v.revoked
@@ -241,7 +346,8 @@ export const activityStore = {
     const already = state.checkins.find(
       (c) => c.volunteerIdId === volunteerId.id
     )
-    if (already) return { ok: false, reason: 'already_checked_in', volunteerId }
+    if (already)
+      return { ok: false, reason: 'already_checked_in', volunteerId }
 
     const checkin = {
       id: 'ci-' + Date.now(),
@@ -270,9 +376,11 @@ export const activityStore = {
   getCheckInsForNgo: (opportunityIds) =>
     state.checkins.filter((c) => opportunityIds.includes(c.opportunityId)),
 
-  /* saves */
+  /* ---------- saves ---------- */
   isSaved: (userId, campaignId) =>
-    state.saves.some((s) => s.userId === userId && s.campaignId === campaignId),
+    state.saves.some(
+      (s) => s.userId === userId && s.campaignId === campaignId
+    ),
   toggleSave: (userId, campaignId) => {
     const exists = state.saves.find(
       (s) => s.userId === userId && s.campaignId === campaignId
@@ -284,7 +392,7 @@ export const activityStore = {
   },
   getSaved: (userId) => state.saves.filter((s) => s.userId === userId),
 
-  /* NGO dashboard creations */
+  /* ---------- NGO dashboard creations ---------- */
   createPost: (post) => {
     state.extraPosts.push({
       id: `p-new-${Date.now()}`,
@@ -316,8 +424,11 @@ export const activityStore = {
   getExtraCampaigns: () => state.extraCampaigns,
   getExtraOpportunities: () => state.extraOpportunities,
 
-  /* notifications */
-  addNotification: (userId, { type = 'system', title, body = '', link = null }) => {
+  /* ---------- notifications ---------- */
+  addNotification: (
+    userId,
+    { type = 'system', title, body = '', link = null }
+  ) => {
     state.notifications.unshift({
       id: `n-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       userId,
@@ -355,11 +466,13 @@ export const activityStore = {
     if (changed) save(state)
   },
   clearNotifications: (userId) => {
-    state.notifications = state.notifications.filter((n) => n.userId !== userId)
+    state.notifications = state.notifications.filter(
+      (n) => n.userId !== userId
+    )
     save(state)
   },
 
-  /* comments */
+  /* ---------- comments ---------- */
   getComments: (postId) => state.comments.filter((c) => c.postId === postId),
   addComment: (postId, userId, userName, text) => {
     if (!text.trim()) return

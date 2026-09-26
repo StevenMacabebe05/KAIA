@@ -19,8 +19,8 @@ export default function Volunteer() {
   const [tab, setTab] = useState('nearby')
   const [confettiKey, setConfettiKey] = useState(0)
   const [ticket, setTicket] = useState(null)
-  const [detail, setDetail] = useState(null)   // opportunity being viewed
-  const [applying, setApplying] = useState(null) // opportunity being applied to
+  const [detail, setDetail] = useState(null)
+  const [applying, setApplying] = useState(null)
 
   const all = [...OPPORTUNITIES, ...store.getExtraOpportunities()]
   const filtered = all.filter((o) => {
@@ -35,30 +35,34 @@ export default function Volunteer() {
   })
 
   const getNgo = (id) => NGOS.find((n) => n.id === id)
-  const mySignups = user ? store.getSignups(user.id) : []
-  const isSignedUp = (id) => mySignups.some((s) => s.opportunityId === id)
 
-  /* -------- helpers -------- */
+  /* only count ACTIVE signups — cancelled ones do not count */
+  const isSignedUp = (opportunityId) => {
+    if (!user) return false
+    const signup = store.getSignup(user.id, opportunityId)
+    return signup && signup.status !== 'cancelled'
+  }
+
+  /* was the signup cancelled? */
+  const wasCancelled = (opportunityId) => {
+    if (!user) return null
+    return store.wasCancelled(user.id, opportunityId)
+  }
+
   function openDetail(opp) {
     setDetail(opp)
   }
 
   function openTicket(opp) {
-    let vid = store.getVolunteerId(user.id, opp.id)
-    if (!vid) {
-      // recover: create volunteer ID on the fly for older signups
-      const result = store.signUpForOpportunity(user.id, opp.id)
-      vid = result?.volunteerId
-    }
+    const vid = store.getVolunteerId(user.id, opp.id)
     if (vid) {
       setDetail(null)
       setTicket({ volunteerId: vid, opportunity: opp })
     } else {
-      toast.push('Could not open ticket. Please try again.', 'error')
+      toast.push('No active ticket found. Please apply again.', 'info')
     }
   }
 
-  /* -------- flow actions -------- */
   function handleApplyFromDetail() {
     const opp = detail
     setDetail(null)
@@ -73,6 +77,7 @@ export default function Volunteer() {
     })
 
     if (!result) {
+      // safety: shouldn't happen since we allow re-signup now
       openTicket(opp)
       setApplying(null)
       return
@@ -132,6 +137,7 @@ export default function Volunteer() {
           {filtered.map((o) => {
             const ngo = getNgo(o.ngoId)
             const signed = isSignedUp(o.id)
+            const cancelled = wasCancelled(o.id)
 
             return (
               <article
@@ -190,6 +196,17 @@ export default function Volunteer() {
                   {o.description}
                 </p>
 
+                {cancelled && !signed && (
+                  <div className="previous-cancel-note">
+                    <Icon name="shield" size={12} color="var(--red-600)" />
+                    <span>
+                      You cancelled this signup on{' '}
+                      {new Date(cancelled.cancelledAt).toLocaleDateString()}.
+                      You can apply again below.
+                    </span>
+                  </div>
+                )}
+
                 <div
                   className="row-between"
                   onClick={(e) => e.stopPropagation()}
@@ -220,7 +237,7 @@ export default function Volunteer() {
                       className="btn btn-primary"
                       onClick={() => openDetail(o)}
                     >
-                      View details
+                      {cancelled ? 'Re-apply' : 'View details'}
                       <Icon name="arrow-right" size={14} />
                     </button>
                   )}
@@ -231,7 +248,6 @@ export default function Volunteer() {
         </div>
       )}
 
-      {/* -------- detail modal -------- */}
       {detail && (
         <VolunteerDetailModal
           opportunity={detail}
@@ -243,20 +259,18 @@ export default function Volunteer() {
         />
       )}
 
-      {/* -------- application form -------- */}
       {applying && (
         <VolunteerApplicationForm
           opportunity={applying}
           ngo={getNgo(applying.ngoId)}
           onClose={() => {
             setApplying(null)
-            setDetail(applying) // back to detail
+            setDetail(applying)
           }}
           onSubmit={handleApplicationSubmit}
         />
       )}
 
-      {/* -------- QR ticket -------- */}
       {ticket && (
         <VolunteerTicket
           volunteerId={ticket.volunteerId}

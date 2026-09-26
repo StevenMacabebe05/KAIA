@@ -2572,3 +2572,134 @@ textarea.input { resize: vertical; min-height: 90px; }
   .vd-footer { padding: 16px 20px 20px; }
   .vd-title { font-size: 19px; }
 }
+
+/* =========================================================
+   CANCELLATION + APPLICATIONS VIEW
+   ========================================================= */
+
+.cancel-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.reason-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+@media (max-width: 480px) {
+  .reason-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- applications modal ---------- */
+.applications-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--ink-100);
+  margin-bottom: 16px;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 2;
+}
+
+.applicant-card {
+  background: var(--white);
+  border: 1px solid var(--ink-100);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.applicant-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.applicant-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--blue-700);
+  color: white;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.applicant-name {
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--ink-900);
+}
+
+.applicant-meta {
+  font-size: 12px;
+  color: var(--ink-500);
+  margin-top: 2px;
+}
+
+.applicant-event {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-700);
+  padding: 8px 10px;
+  background: var(--blue-50);
+  border-radius: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.applicant-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 520px) {
+  .applicant-grid { grid-template-columns: 1fr; }
+}
+
+.applicant-label {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-500);
+  margin-bottom: 3px;
+}
+
+.applicant-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-900);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.applicant-cancellation {
+  padding: 10px 12px;
+  background: #fee2e2;
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--red-600);
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.applicant-footer {
+  padding-top: 10px;
+  border-top: 1px dashed var(--ink-100);
+}
