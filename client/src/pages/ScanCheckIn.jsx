@@ -123,7 +123,7 @@ export default function ScanCheckIn() {
       link: '/my-kaia',
     })
 
-    setConfettiKey(Date.now())
+    setConfettiKey((k) => k + 1)
     setResult({
       code,
       opportunity,
