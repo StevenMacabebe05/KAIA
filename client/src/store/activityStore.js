@@ -11,6 +11,9 @@ const EMPTY = {
   notifications: [],
   comments: [],
   receipts: [],
+  checkins: [],
+  volunteerIds: [],
+  applications: [],
 }
 
 const SEED_NOTIFICATIONS = [
@@ -24,16 +27,6 @@ const SEED_NOTIFICATIONS = [
     read: false,
     createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
   },
-  {
-    id: 'seed-n-2',
-    userId: 'u-1',
-    type: 'follow',
-    title: 'You followed Angat Buhay Foundation',
-    body: 'Their posts will now appear in your Home feed.',
-    link: '/ngo/ngo-1',
-    read: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
-  },
 ]
 
 const SEED_COMMENTS = [
@@ -46,6 +39,15 @@ const SEED_COMMENTS = [
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
   },
 ]
+
+function makeVolunteerCode() {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let code = 'KAIA-VOL-'
+  for (let i = 0; i < 8; i++) {
+    code += alphabet[Math.floor(Math.random() * alphabet.length)]
+  }
+  return code
+}
 
 function load() {
   try {
@@ -135,34 +137,138 @@ export const activityStore = {
     save(state)
     return receipt
   },
-  getDonations: (userId) => state.donations.filter((d) => d.userId === userId),
+  getDonations: (userId) =>
+    state.donations
+      .filter((d) => d.userId === userId)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
   getTotalDonated: (userId) =>
     state.donations
       .filter((d) => d.userId === userId)
       .reduce((sum, d) => sum + d.amount, 0),
   getReceipt: (id) => state.receipts.find((r) => r.id === id),
 
-  /* volunteer */
-  signUpForOpportunity: (userId, opportunityId, hours = 0) => {
+  /* volunteer signups + application details */
+  signUpForOpportunity: (userId, opportunityId, applicationDetails = {}) => {
     const exists = state.signups.find(
       (s) => s.userId === userId && s.opportunityId === opportunityId
     )
-    if (exists) return false
-    state.signups.push({
+    if (exists) return null
+
+    const hours = applicationDetails.hours || 0
+
+    const signup = {
       userId,
       opportunityId,
       hours,
       status: 'registered',
       createdAt: new Date().toISOString(),
-    })
+    }
+    state.signups.push(signup)
+
+    // store application details if provided
+    if (applicationDetails.name) {
+      state.applications.push({
+        id: 'app-' + Date.now(),
+        userId,
+        opportunityId,
+        name: applicationDetails.name,
+        age: applicationDetails.age,
+        phone: applicationDetails.phone,
+        address: applicationDetails.address,
+        emergencyName: applicationDetails.emergencyName,
+        emergencyPhone: applicationDetails.emergencyPhone,
+        skills: applicationDetails.skills || '',
+        availability: applicationDetails.availability || [],
+        submittedAt: new Date().toISOString(),
+      })
+    }
+
+    // issue volunteer ID
+    const volunteerId = {
+      id: 'vid-' + Date.now(),
+      code: makeVolunteerCode(),
+      userId,
+      opportunityId,
+      issuedAt: new Date().toISOString(),
+      revoked: false,
+    }
+    state.volunteerIds.push(volunteerId)
+
     save(state)
-    return true
+    return { signup, volunteerId }
   },
-  getSignups: (userId) => state.signups.filter((s) => s.userId === userId),
+
+  getSignups: (userId) =>
+    state.signups
+      .filter((s) => s.userId === userId)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
   getTotalHours: (userId) =>
     state.signups
-      .filter((s) => s.userId === userId && s.status === 'completed')
+      .filter(
+        (s) =>
+          s.userId === userId &&
+          (s.status === 'completed' || s.status === 'attended')
+      )
       .reduce((sum, s) => sum + (s.hours || 0), 0),
+
+  getApplication: (userId, opportunityId) =>
+    state.applications.find(
+      (a) => a.userId === userId && a.opportunityId === opportunityId
+    ),
+  getApplicationsForOpportunity: (opportunityId) =>
+    state.applications.filter((a) => a.opportunityId === opportunityId),
+
+  /* volunteer IDs */
+  getVolunteerId: (userId, opportunityId) =>
+    state.volunteerIds.find(
+      (v) =>
+        v.userId === userId &&
+        v.opportunityId === opportunityId &&
+        !v.revoked
+    ),
+  getVolunteerIdByCode: (code) =>
+    state.volunteerIds.find((v) => v.code === code && !v.revoked),
+  getVolunteerIds: (userId) =>
+    state.volunteerIds.filter((v) => v.userId === userId && !v.revoked),
+
+  /* check-ins */
+  checkIn: (code, scannerNgoId) => {
+    const volunteerId = state.volunteerIds.find(
+      (v) => v.code === code && !v.revoked
+    )
+    if (!volunteerId) return { ok: false, reason: 'not_found' }
+
+    const already = state.checkins.find(
+      (c) => c.volunteerIdId === volunteerId.id
+    )
+    if (already) return { ok: false, reason: 'already_checked_in', volunteerId }
+
+    const checkin = {
+      id: 'ci-' + Date.now(),
+      volunteerIdId: volunteerId.id,
+      code: volunteerId.code,
+      userId: volunteerId.userId,
+      opportunityId: volunteerId.opportunityId,
+      scannerNgoId: scannerNgoId || null,
+      checkedInAt: new Date().toISOString(),
+    }
+    state.checkins.push(checkin)
+
+    const signup = state.signups.find(
+      (s) =>
+        s.userId === volunteerId.userId &&
+        s.opportunityId === volunteerId.opportunityId
+    )
+    if (signup) signup.status = 'attended'
+
+    save(state)
+    return { ok: true, checkin, volunteerId }
+  },
+  getCheckIns: (userId) => state.checkins.filter((c) => c.userId === userId),
+  getCheckInsForOpportunity: (opportunityId) =>
+    state.checkins.filter((c) => c.opportunityId === opportunityId),
+  getCheckInsForNgo: (opportunityIds) =>
+    state.checkins.filter((c) => opportunityIds.includes(c.opportunityId)),
 
   /* saves */
   isSaved: (userId, campaignId) =>

@@ -16,6 +16,7 @@ import MyKaia from './pages/MyKaia'
 import RegisterNGO from './pages/RegisterNGO'
 import NGODashboard from './pages/NGODashboard'
 import Receipt from './pages/Receipt'
+import ScanCheckIn from './pages/ScanCheckIn'
 import NotFound from './pages/NotFound'
 
 export default function App() {
@@ -57,6 +58,14 @@ export default function App() {
                 element={
                   <ProtectedRoute requireRole="ngo_rep">
                     <NGODashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/scan"
+                element={
+                  <ProtectedRoute requireRole="ngo_rep">
+                    <ScanCheckIn />
                   </ProtectedRoute>
                 }
               />

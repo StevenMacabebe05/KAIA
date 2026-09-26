@@ -62,6 +62,16 @@ function Header() {
           >
             Volunteer
           </NavLink>
+          {user?.role === 'ngo_rep' && (
+            <NavLink
+              to="/scan"
+              className={({ isActive }) =>
+                `nav-link ${isActive ? 'active' : ''}`
+              }
+            >
+              Scan
+            </NavLink>
+          )}
         </nav>
 
         <div className="header-actions">

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useActivity } from '../store/useActivity'
@@ -7,6 +8,7 @@ import { NGOS } from '../data/ngos'
 import { ACHIEVEMENTS } from '../data/achievements'
 import Icon from '../components/Icon'
 import ProgressBar from '../components/ProgressBar'
+import VolunteerTicket from '../components/VolunteerTicket'
 import {
   ActivityAreaChart,
   CategoryDonut,
@@ -26,17 +28,34 @@ export default function MyKaia() {
   const { user, logOut } = useAuth()
   const store = useActivity()
   const navigate = useNavigate()
+  const [ticket, setTicket] = useState(null)
+
   if (!user) return null
 
-  const donations = store.getDonations(user.id)
-  const signups = store.getSignups(user.id)
+  /* ---------- sorted, newest-first data ---------- */
+  const donations = [...store.getDonations(user.id)].sort(
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+  )
+  const signups = [...store.getSignups(user.id)].sort(
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+  )
   const follows = store.getFollowedNgoIds(user.id)
   const saves = store.getSaved(user.id)
+  const volunteerIds = store.getVolunteerIds(user.id)
+  const checkIns = store.getCheckIns(user.id)
+
   const hours = signups
-    .filter((s) => s.status === 'completed')
-    .reduce((sum, s) => sum + (s.hours || 0), 0)
+    .filter((s) => s.status === 'completed' || s.status === 'attended')
+    .reduce((sum, s) => sum + (s.hours || 4), 0)
+
   const totalDonated = donations.reduce((s, d) => s + d.amount, 0)
 
+  function findReceipt(donation) {
+    const all = store.getState().receipts || []
+    return all.find((r) => r.ref === donation.ref)
+  }
+
+  /* ---------- category breakdown for donut ---------- */
   const categoryMap = {}
   donations.forEach((d) => {
     const c = CAMPAIGNS.find((x) => x.id === d.campaignId)
@@ -62,6 +81,7 @@ export default function MyKaia() {
 
   return (
     <div className="container">
+      {/* ---------- user card ---------- */}
       <div className="card" style={{ padding: 28, marginBottom: 24 }}>
         <div className="row" style={{ gap: 18, flexWrap: 'wrap' }}>
           <div className="avatar avatar-lg">
@@ -88,7 +108,7 @@ export default function MyKaia() {
         </div>
       </div>
 
-      {/* Stat cards */}
+      {/* ---------- 4 rich stat cards ---------- */}
       <div className="stat-row" style={{ marginBottom: 24 }}>
         <div className="stat-card-rich">
           <div className="stat-rich-top">
@@ -151,7 +171,7 @@ export default function MyKaia() {
         </div>
       </div>
 
-      {/* Saved campaigns */}
+      {/* ---------- saved campaigns ---------- */}
       <div className="chart-card" style={{ marginBottom: 20 }}>
         <div className="chart-card-header">
           <div>
@@ -201,7 +221,70 @@ export default function MyKaia() {
         )}
       </div>
 
-      {/* Achievements */}
+      {/* ---------- volunteer IDs / QR tickets ---------- */}
+      <div className="chart-card" style={{ marginBottom: 20 }}>
+        <div className="chart-card-header">
+          <div>
+            <h3 className="chart-title">Your volunteer IDs</h3>
+            <p className="chart-subtitle">
+              {volunteerIds.length} active QR{' '}
+              {volunteerIds.length === 1 ? 'ticket' : 'tickets'}
+            </p>
+          </div>
+        </div>
+
+        {volunteerIds.length === 0 ? (
+          <p className="text-muted" style={{ fontSize: 13 }}>
+            Sign up for a volunteer opportunity to receive your QR ID.
+          </p>
+        ) : (
+          <div className="grid grid-2">
+            {volunteerIds.map((vid) => {
+              const opp = OPPORTUNITIES.find((o) => o.id === vid.opportunityId)
+              const attended = checkIns.some((c) => c.volunteerIdId === vid.id)
+              return (
+                <div key={vid.id} className="card" style={{ padding: 14 }}>
+                  <div className="row-between" style={{ marginBottom: 8 }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: 14 }}>
+                        {opp?.title ?? 'Volunteer ID'}
+                      </div>
+                      <div className="text-muted" style={{ fontSize: 12 }}>
+                        {opp?.location} · {opp?.date}
+                      </div>
+                    </div>
+                    {attended && (
+                      <span
+                        className="badge"
+                        style={{ background: '#dcfce7', color: '#15803d' }}
+                      >
+                        ✓ Attended
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    className="receipt-ref"
+                    style={{ display: 'inline-block', fontSize: 12 }}
+                  >
+                    {vid.code}
+                  </div>
+                  <button
+                    className="btn btn-primary btn-sm btn-block"
+                    style={{ marginTop: 12 }}
+                    onClick={() =>
+                      setTicket({ volunteerId: vid, opportunity: opp })
+                    }
+                  >
+                    View QR ticket
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ---------- achievements ---------- */}
       <div className="chart-card" style={{ marginBottom: 20 }}>
         <div className="chart-card-header">
           <div>
@@ -234,7 +317,7 @@ export default function MyKaia() {
         </div>
       </div>
 
-      {/* Impact over time */}
+      {/* ---------- impact over time ---------- */}
       <div className="chart-card" style={{ marginBottom: 20 }}>
         <div className="chart-card-header">
           <div>
@@ -248,7 +331,7 @@ export default function MyKaia() {
         <ActivityAreaChart data={IMPACT_HISTORY} />
       </div>
 
-      {/* Category donut + Following */}
+      {/* ---------- category donut + following ---------- */}
       <div className="chart-grid">
         <div className="chart-card">
           <div className="chart-card-header">
@@ -318,8 +401,9 @@ export default function MyKaia() {
         </div>
       </div>
 
-      {/* Recent activity */}
+      {/* ---------- recent activity ---------- */}
       <div className="chart-grid-2" style={{ marginTop: 20 }}>
+        {/* Donations — newest first */}
         <div className="chart-card">
           <div className="chart-card-header">
             <h3 className="chart-title">Recent donations</h3>
@@ -331,38 +415,59 @@ export default function MyKaia() {
             </p>
           ) : (
             <div className="stack" style={{ gap: 4 }}>
-              {donations.slice(0, 5).map((d, i) => {
+              {donations.slice(0, 5).map((d) => {
                 const c = CAMPAIGNS.find((x) => x.id === d.campaignId)
-                return (
+                const receipt = findReceipt(d)
+                const row = (
                   <div
-                    key={i}
                     className="row-between"
-                    style={{
-                      padding: '10px 0',
-                      borderBottom:
-                        i < Math.min(donations.length, 5) - 1
-                          ? '1px solid var(--ink-100)'
-                          : 'none',
-                    }}
+                    style={{ padding: '10px 0' }}
                   >
                     <div>
                       <div style={{ fontWeight: 600, fontSize: 14 }}>
                         {c?.title ?? 'a campaign'}
                       </div>
                       <div className="text-muted" style={{ fontSize: 12 }}>
-                        {new Date(d.createdAt).toLocaleDateString()}
+                        {new Date(d.createdAt).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        })}
                       </div>
                     </div>
-                    <strong style={{ color: 'var(--blue-700)' }}>
-                      ₱{d.amount.toLocaleString()}
-                    </strong>
+                    <div className="row" style={{ gap: 8 }}>
+                      <strong style={{ color: 'var(--blue-700)' }}>
+                        ₱{d.amount.toLocaleString()}
+                      </strong>
+                      {receipt && (
+                        <Icon
+                          name="chevron-right"
+                          size={14}
+                          color="var(--ink-500)"
+                        />
+                      )}
+                    </div>
                   </div>
+                )
+                return receipt ? (
+                  <Link
+                    key={d.ref || d.createdAt}
+                    to={`/receipt/${receipt.id}`}
+                    style={{ color: 'inherit', display: 'block' }}
+                  >
+                    {row}
+                  </Link>
+                ) : (
+                  <div key={d.ref || d.createdAt}>{row}</div>
                 )
               })}
             </div>
           )}
         </div>
 
+        {/* Signups — newest first */}
         <div className="chart-card">
           <div className="chart-card-header">
             <h3 className="chart-title">Volunteer signups</h3>
@@ -374,19 +479,20 @@ export default function MyKaia() {
             </p>
           ) : (
             <div className="stack" style={{ gap: 4 }}>
-              {signups.slice(0, 5).map((s, i) => {
-                const o = OPPORTUNITIES.find((x) => x.id === s.opportunityId)
+              {signups.slice(0, 5).map((s) => {
+                const o = OPPORTUNITIES.find(
+                  (x) => x.id === s.opportunityId
+                )
+                const attended = checkIns.some(
+                  (c) =>
+                    c.userId === s.userId &&
+                    c.opportunityId === s.opportunityId
+                )
                 return (
                   <div
-                    key={i}
+                    key={s.createdAt}
                     className="row-between"
-                    style={{
-                      padding: '10px 0',
-                      borderBottom:
-                        i < Math.min(signups.length, 5) - 1
-                          ? '1px solid var(--ink-100)'
-                          : 'none',
-                    }}
+                    style={{ padding: '10px 0' }}
                   >
                     <div>
                       <div style={{ fontWeight: 600, fontSize: 14 }}>
@@ -399,10 +505,28 @@ export default function MyKaia() {
                           textTransform: 'capitalize',
                         }}
                       >
-                        {s.status}
+                        {attended ? 'attended' : s.status} ·{' '}
+                        {new Date(s.createdAt).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
                       </div>
                     </div>
-                    <Icon name="check" size={16} color="var(--green-600)" />
+                    {attended ? (
+                      <span
+                        className="badge"
+                        style={{ background: '#dcfce7', color: '#15803d' }}
+                      >
+                        ✓
+                      </span>
+                    ) : (
+                      <Icon
+                        name="check"
+                        size={16}
+                        color="var(--green-600)"
+                      />
+                    )}
                   </div>
                 )
               })}
@@ -410,6 +534,15 @@ export default function MyKaia() {
           )}
         </div>
       </div>
+
+      {/* ---------- ticket modal ---------- */}
+      {ticket && (
+        <VolunteerTicket
+          volunteerId={ticket.volunteerId}
+          opportunity={ticket.opportunity}
+          onClose={() => setTicket(null)}
+        />
+      )}
     </div>
   )
 }
