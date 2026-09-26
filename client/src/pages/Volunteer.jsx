@@ -6,14 +6,21 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from '../components/Toast'
 import EmptyState from '../components/EmptyState'
 import Confetti from '../components/Confetti'
+import VolunteerTicket from '../components/VolunteerTicket'
+import VolunteerApplicationForm from '../components/VolunteerApplicationForm'
+import VolunteerDetailModal from '../components/VolunteerDetailModal'
 import Icon from '../components/Icon'
 
 export default function Volunteer() {
   const { user } = useAuth()
   const store = useActivity()
   const toast = useToast()
+
   const [tab, setTab] = useState('nearby')
   const [confettiKey, setConfettiKey] = useState(0)
+  const [ticket, setTicket] = useState(null)
+  const [detail, setDetail] = useState(null)   // opportunity being viewed
+  const [applying, setApplying] = useState(null) // opportunity being applied to
 
   const all = [...OPPORTUNITIES, ...store.getExtraOpportunities()]
   const filtered = all.filter((o) => {
@@ -31,21 +38,59 @@ export default function Volunteer() {
   const mySignups = user ? store.getSignups(user.id) : []
   const isSignedUp = (id) => mySignups.some((s) => s.opportunityId === id)
 
-  function handleSignUp(opp) {
-    if (!user) return
-    const ok = store.signUpForOpportunity(user.id, opp.id)
-    if (ok) {
-      store.addNotification(user.id, {
-        type: 'signup',
-        title: 'Volunteer signup confirmed',
-        body: `You signed up for "${opp.title}" on ${opp.date}.`,
-        link: '/volunteer',
-      })
-      setConfettiKey(Date.now())
-      toast.push(`You're signed up for "${opp.title}"`, 'success')
-    } else {
-      toast.push('You already signed up for this.', 'info')
+  /* -------- helpers -------- */
+  function openDetail(opp) {
+    setDetail(opp)
+  }
+
+  function openTicket(opp) {
+    let vid = store.getVolunteerId(user.id, opp.id)
+    if (!vid) {
+      // recover: create volunteer ID on the fly for older signups
+      const result = store.signUpForOpportunity(user.id, opp.id)
+      vid = result?.volunteerId
     }
+    if (vid) {
+      setDetail(null)
+      setTicket({ volunteerId: vid, opportunity: opp })
+    } else {
+      toast.push('Could not open ticket. Please try again.', 'error')
+    }
+  }
+
+  /* -------- flow actions -------- */
+  function handleApplyFromDetail() {
+    const opp = detail
+    setDetail(null)
+    setApplying(opp)
+  }
+
+  function handleApplicationSubmit(formData) {
+    const opp = applying
+    const result = store.signUpForOpportunity(user.id, opp.id, {
+      ...formData,
+      hours: 0,
+    })
+
+    if (!result) {
+      openTicket(opp)
+      setApplying(null)
+      return
+    }
+
+    const { volunteerId } = result
+
+    store.addNotification(user.id, {
+      type: 'signup',
+      title: 'Volunteer ID issued',
+      body: `Application confirmed for "${opp.title}". Show your QR code at the event.`,
+      link: '/my-kaia',
+    })
+
+    setConfettiKey(Date.now())
+    setTicket({ volunteerId, opportunity: opp })
+    setApplying(null)
+    toast.push('Application submitted — you are confirmed!', 'success')
   }
 
   return (
@@ -55,7 +100,8 @@ export default function Volunteer() {
       <div className="page-header">
         <h1 className="page-title">Volunteer opportunities</h1>
         <p className="page-subtitle">
-          Turn spare time into real, trackable impact.
+          Browse opportunities, review the details, then apply for your QR
+          volunteer ID.
         </p>
       </div>
 
@@ -88,7 +134,12 @@ export default function Volunteer() {
             const signed = isSignedUp(o.id)
 
             return (
-              <article key={o.id} className="card card-hover">
+              <article
+                key={o.id}
+                className="card card-hover"
+                style={{ cursor: 'pointer' }}
+                onClick={() => openDetail(o)}
+              >
                 <img
                   src={o.image}
                   alt=""
@@ -139,7 +190,10 @@ export default function Volunteer() {
                   {o.description}
                 </p>
 
-                <div className="row-between">
+                <div
+                  className="row-between"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <span
                     className="pill"
                     style={{
@@ -150,18 +204,65 @@ export default function Volunteer() {
                   >
                     {o.needed - o.registered} needed
                   </span>
-                  <button
-                    className={`btn ${signed ? 'btn-ghost' : 'btn-primary'}`}
-                    disabled={signed}
-                    onClick={() => handleSignUp(o)}
-                  >
-                    {signed ? 'Registered' : 'Volunteer now'}
-                  </button>
+
+                  {signed ? (
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={() => openTicket(o)}
+                    >
+                      <Icon name="book" size={14} />
+                      View QR ID
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={() => openDetail(o)}
+                    >
+                      View details
+                      <Icon name="arrow-right" size={14} />
+                    </button>
+                  )}
                 </div>
               </article>
             )
           })}
         </div>
+      )}
+
+      {/* -------- detail modal -------- */}
+      {detail && (
+        <VolunteerDetailModal
+          opportunity={detail}
+          ngo={getNgo(detail.ngoId)}
+          alreadySignedUp={isSignedUp(detail.id)}
+          onClose={() => setDetail(null)}
+          onApply={handleApplyFromDetail}
+          onViewTicket={() => openTicket(detail)}
+        />
+      )}
+
+      {/* -------- application form -------- */}
+      {applying && (
+        <VolunteerApplicationForm
+          opportunity={applying}
+          ngo={getNgo(applying.ngoId)}
+          onClose={() => {
+            setApplying(null)
+            setDetail(applying) // back to detail
+          }}
+          onSubmit={handleApplicationSubmit}
+        />
+      )}
+
+      {/* -------- QR ticket -------- */}
+      {ticket && (
+        <VolunteerTicket
+          volunteerId={ticket.volunteerId}
+          opportunity={ticket.opportunity}
+          onClose={() => setTicket(null)}
+        />
       )}
     </div>
   )

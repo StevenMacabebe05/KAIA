@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { CAMPAIGNS } from '../data/campaigns'
 import { OPPORTUNITIES } from '../data/opportunities'
 import { POSTS } from '../data/posts'
@@ -43,9 +44,11 @@ export default function NGODashboard() {
   ]
 
   const totalRaised = campaigns.reduce((s, c) => s + c.raised, 0)
-  const activeCampaigns = campaigns.filter((c) => c.status !== 'completed').length
+  const activeCampaigns = campaigns.filter(
+    (c) => c.status !== 'completed'
+  ).length
 
-  /* chart data */
+  /* ---------- charts data ---------- */
   const campaignChartData = campaigns.slice(0, 4).map((c) => ({
     name: c.title.length > 18 ? c.title.slice(0, 18) + '…' : c.title,
     raised: c.raised,
@@ -60,20 +63,34 @@ export default function NGODashboard() {
   const statusDonutData = [
     { key: 'urgent', name: 'Urgent', value: statusCounts.urgent || 0 },
     { key: 'active', name: 'Active', value: statusCounts.active || 0 },
-    { key: 'almost_complete', name: 'Almost Complete', value: statusCounts.almost_complete || 0 },
-    { key: 'completed', name: 'Completed', value: statusCounts.completed || 0 },
+    {
+      key: 'almost_complete',
+      name: 'Almost Complete',
+      value: statusCounts.almost_complete || 0,
+    },
+    {
+      key: 'completed',
+      name: 'Completed',
+      value: statusCounts.completed || 0,
+    },
   ].filter((d) => d.value > 0)
 
-  /* sparkline data (last 6 months of the donation trend) */
   const donationSpark = DONATION_TREND.map((d) => d.amount)
 
+  /* ---------- attendance ---------- */
+  const opportunityIds = opportunities.map((o) => o.id)
+  const checkins = store.getCheckInsForNgo(opportunityIds)
+
+  /* ---------- quick action tiles ---------- */
   const TILES = [
+    { key: 'scan', label: 'Scan check-in', icon: 'search', link: '/scan' },
     { key: 'post', label: 'Create Post', icon: 'megaphone' },
     { key: 'campaign', label: 'Create Campaign', icon: 'heart' },
     { key: 'volunteer', label: 'Create Volunteer', icon: 'hand' },
     { key: 'event', label: 'Create Event', icon: 'calendar' },
     { key: 'manage-campaigns', label: 'Manage Campaigns', icon: 'chart' },
     { key: 'manage-volunteers', label: 'Manage Volunteers', icon: 'users' },
+    { key: 'attendance', label: 'View Attendance', icon: 'check-circle' },
     { key: 'updates', label: 'View Updates', icon: 'inbox' },
     { key: 'engagement', label: 'View Engagement', icon: 'trending' },
   ]
@@ -83,7 +100,8 @@ export default function NGODashboard() {
       <div className="page-header">
         <h1 className="page-title">NGO Dashboard</h1>
         <p className="page-subtitle">
-          Manage campaigns, volunteers, and updates. Track performance in real time.
+          Manage campaigns, volunteers, and updates. Track performance in real
+          time.
         </p>
       </div>
 
@@ -92,7 +110,9 @@ export default function NGODashboard() {
         <div className="stat-card-rich">
           <div className="stat-rich-top">
             <div>
-              <div className="stat-rich-value">₱{totalRaised.toLocaleString()}</div>
+              <div className="stat-rich-value">
+                ₱{totalRaised.toLocaleString()}
+              </div>
               <div className="stat-rich-label">Total raised</div>
             </div>
             <Sparkline data={donationSpark} color="#1e40d8" />
@@ -117,7 +137,10 @@ export default function NGODashboard() {
               <div className="stat-rich-value">2,300</div>
               <div className="stat-rich-label">Supporters</div>
             </div>
-            <Sparkline data={[1800, 1950, 2050, 2100, 2200, 2300]} color="#1e40d8" />
+            <Sparkline
+              data={[1800, 1950, 2050, 2100, 2200, 2300]}
+              color="#1e40d8"
+            />
           </div>
           <div className="stat-rich-delta">↑ 4.3% this week</div>
         </div>
@@ -125,12 +148,17 @@ export default function NGODashboard() {
         <div className="stat-card-rich">
           <div className="stat-rich-top">
             <div>
-              <div className="stat-rich-value">{opportunities.length}</div>
-              <div className="stat-rich-label">Volunteer ops</div>
+              <div className="stat-rich-value">{checkins.length}</div>
+              <div className="stat-rich-label">Event check-ins</div>
             </div>
-            <Sparkline data={[1, 1, 2, 2, 2, 2]} color="#16a34a" />
+            <Sparkline
+              data={[0, 0, 1, 2, 2, checkins.length]}
+              color="#16a34a"
+            />
           </div>
-          <div className="stat-rich-delta">Steady</div>
+          <div className="stat-rich-delta">
+            {checkins.length > 0 ? '↑ new this month' : 'No check-ins yet'}
+          </div>
         </div>
       </div>
 
@@ -140,7 +168,9 @@ export default function NGODashboard() {
           <div className="chart-card-header">
             <div>
               <h3 className="chart-title">Donations over time</h3>
-              <p className="chart-subtitle">Last 6 months of contributions</p>
+              <p className="chart-subtitle">
+                Last 6 months of contributions
+              </p>
             </div>
             <span className="chart-badge">↑ 12.4%</span>
           </div>
@@ -163,7 +193,9 @@ export default function NGODashboard() {
         <div className="chart-card-header">
           <div>
             <h3 className="chart-title">Campaign performance</h3>
-            <p className="chart-subtitle">Raised vs goal for each active campaign</p>
+            <p className="chart-subtitle">
+              Raised vs goal for each active campaign
+            </p>
           </div>
           <span className="chart-badge orange">
             {campaigns.length} campaigns
@@ -172,44 +204,74 @@ export default function NGODashboard() {
         <CampaignBarChart data={campaignChartData} />
       </div>
 
-      {/* ---------- action tiles ---------- */}
+      {/* ---------- quick actions ---------- */}
       <div className="page-header" style={{ marginTop: 32 }}>
         <h2 className="page-title" style={{ fontSize: 22 }}>
           Quick actions
         </h2>
+        <p className="page-subtitle">
+          Everything you need to run your organization on KAIA.
+        </p>
       </div>
 
       <div className="grid grid-4">
-        {TILES.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setModal(t.key)}
-            className="card card-hover"
-            style={{
-              textAlign: 'left',
-              cursor: 'pointer',
-              border: '1px solid var(--ink-100)',
-              background: 'white',
-              fontFamily: 'inherit',
-            }}
-          >
-            <div
+        {TILES.map((t) => {
+          const content = (
+            <>
+              <div
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 10,
+                  background: 'var(--blue-50)',
+                  color: 'var(--blue-700)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  marginBottom: 14,
+                }}
+              >
+                <Icon name={t.icon} size={20} />
+              </div>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>{t.label}</div>
+            </>
+          )
+
+          if (t.link) {
+            return (
+              <Link
+                key={t.key}
+                to={t.link}
+                className="card card-hover"
+                style={{
+                  textAlign: 'left',
+                  border: '1px solid var(--ink-100)',
+                  background: 'white',
+                  color: 'inherit',
+                  display: 'block',
+                }}
+              >
+                {content}
+              </Link>
+            )
+          }
+
+          return (
+            <button
+              key={t.key}
+              onClick={() => setModal(t.key)}
+              className="card card-hover"
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: 10,
-                background: 'var(--blue-50)',
-                color: 'var(--blue-700)',
-                display: 'grid',
-                placeItems: 'center',
-                marginBottom: 14,
+                textAlign: 'left',
+                cursor: 'pointer',
+                border: '1px solid var(--ink-100)',
+                background: 'white',
+                fontFamily: 'inherit',
               }}
             >
-              <Icon name={t.icon} size={20} />
-            </div>
-            <div style={{ fontWeight: 700, fontSize: 14 }}>{t.label}</div>
-          </button>
-        ))}
+              {content}
+            </button>
+          )
+        })}
       </div>
 
       {/* ---------- modals ---------- */}
@@ -217,57 +279,114 @@ export default function NGODashboard() {
         <PostModal
           onClose={() => setModal(null)}
           onSave={(content) => {
-            store.createPost({ ngoId: user.ngoId, type: 'update', content, image: '' })
+            store.createPost({
+              ngoId: user.ngoId,
+              type: 'update',
+              content,
+              image: '',
+            })
             setModal(null)
           }}
         />
       )}
+
       {modal === 'campaign' && (
         <CampaignModal
           onClose={() => setModal(null)}
-          onSave={(data) => { store.createCampaign({ ngoId: user.ngoId, ...data }); setModal(null) }}
+          onSave={(data) => {
+            store.createCampaign({ ngoId: user.ngoId, ...data })
+            setModal(null)
+          }}
         />
       )}
+
       {(modal === 'volunteer' || modal === 'event') && (
         <VolunteerModal
           onClose={() => setModal(null)}
-          onSave={(data) => { store.createOpportunity({ ngoId: user.ngoId, ...data }); setModal(null) }}
+          onSave={(data) => {
+            store.createOpportunity({ ngoId: user.ngoId, ...data })
+            setModal(null)
+          }}
         />
       )}
+
       {modal === 'manage-campaigns' && (
-        <ListModal title="Campaigns" onClose={() => setModal(null)}
-          items={campaigns.map((c) => `${c.title} — ₱${c.raised.toLocaleString()} / ₱${c.goal.toLocaleString()}`)} />
+        <ListModal
+          title="Campaigns"
+          onClose={() => setModal(null)}
+          items={campaigns.map(
+            (c) =>
+              `${c.title} — ₱${c.raised.toLocaleString()} / ₱${c.goal.toLocaleString()}`
+          )}
+        />
       )}
+
       {modal === 'manage-volunteers' && (
-        <ListModal title="Volunteer Opportunities" onClose={() => setModal(null)}
-          items={opportunities.map((o) => `${o.title} — ${o.registered}/${o.needed} registered`)} />
+        <ListModal
+          title="Volunteer Opportunities"
+          onClose={() => setModal(null)}
+          items={opportunities.map(
+            (o) => `${o.title} — ${o.registered}/${o.needed} registered`
+          )}
+        />
       )}
+
+      {modal === 'attendance' && (
+        <AttendanceModal
+          opportunities={opportunities}
+          checkins={checkins}
+          onClose={() => setModal(null)}
+        />
+      )}
+
       {modal === 'updates' && (
-        <ListModal title="Your Posts" onClose={() => setModal(null)}
-          items={posts.map((p) => p.content)} />
+        <ListModal
+          title="Your Posts"
+          onClose={() => setModal(null)}
+          items={posts.map((p) => p.content)}
+        />
       )}
+
       {modal === 'engagement' && (
-        <ListModal title="Engagement" onClose={() => setModal(null)}
+        <ListModal
+          title="Engagement"
+          onClose={() => setModal(null)}
           items={[
             `Total donated: ₱${totalRaised.toLocaleString()}`,
             `Campaigns: ${campaigns.length}`,
             `Posts: ${posts.length}`,
             `Volunteer opportunities: ${opportunities.length}`,
-          ]} />
+            `Event check-ins: ${checkins.length}`,
+          ]}
+        />
       )}
     </div>
   )
 }
 
-/* ---------- modals (unchanged) ---------- */
+/* =========================================================
+   MODALS
+   ========================================================= */
+
 function PostModal({ onClose, onSave }) {
   const [content, setContent] = useState('')
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h3 style={{ marginTop: 0 }}>Create Post</h3>
-        <textarea className="input" rows={4} value={content} onChange={(e) => setContent(e.target.value)} placeholder="What's new?" />
-        <button className="btn btn-primary btn-block" style={{ marginTop: 12 }} onClick={() => onSave(content)} disabled={!content}>
+        <textarea
+          className="input"
+          rows={4}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="What's new?"
+        />
+        <button
+          className="btn btn-primary btn-block"
+          style={{ marginTop: 12 }}
+          onClick={() => onSave(content)}
+          disabled={!content}
+        >
           Publish
         </button>
       </div>
@@ -283,15 +402,44 @@ function CampaignModal({ onClose, onSave }) {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h3 style={{ marginTop: 0 }}>Create Campaign</h3>
-        <input className="input" placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
-        <input className="input" placeholder="Goal (₱)" type="number" value={goal} onChange={(e) => setGoal(e.target.value)} style={{ marginTop: 8 }} />
-        <textarea className="input" rows={3} placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} style={{ marginTop: 8 }} />
-        <button className="btn btn-primary btn-block" style={{ marginTop: 12 }} disabled={!title || !goal}
-          onClick={() => onSave({
-            title, goal: Number(goal), description, category: 'Education',
-            deadline: '2026-12-31',
-            image: 'https://placehold.co/800x400/eff4ff/1e40d8?text=Campaign',
-          })}>
+        <input
+          className="input"
+          placeholder="Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+        <input
+          className="input"
+          placeholder="Goal (₱)"
+          type="number"
+          value={goal}
+          onChange={(e) => setGoal(e.target.value)}
+          style={{ marginTop: 8 }}
+        />
+        <textarea
+          className="input"
+          rows={3}
+          placeholder="Description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          style={{ marginTop: 8 }}
+        />
+        <button
+          className="btn btn-primary btn-block"
+          style={{ marginTop: 12 }}
+          disabled={!title || !goal}
+          onClick={() =>
+            onSave({
+              title,
+              goal: Number(goal),
+              description,
+              category: 'Education',
+              deadline: '2026-12-31',
+              image:
+                'https://placehold.co/800x400/eff4ff/1e40d8?text=Campaign',
+            })
+          }
+        >
           Create
         </button>
       </div>
@@ -307,16 +455,44 @@ function VolunteerModal({ onClose, onSave }) {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h3 style={{ marginTop: 0 }}>Create Opportunity</h3>
-        <input className="input" placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
-        <input className="input" placeholder="Location" value={location} onChange={(e) => setLocation(e.target.value)} style={{ marginTop: 8 }} />
-        <input className="input" type="number" placeholder="Slots needed" value={needed} onChange={(e) => setNeeded(e.target.value)} style={{ marginTop: 8 }} />
-        <button className="btn btn-primary btn-block" style={{ marginTop: 12 }} disabled={!title}
-          onClick={() => onSave({
-            title, location, needed: Number(needed),
-            description: 'New opportunity from the NGO dashboard.',
-            date: '2026-06-01', skills: [],
-            image: 'https://placehold.co/800x400/eff4ff/1e40d8?text=Volunteer',
-          })}>
+        <input
+          className="input"
+          placeholder="Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+        <input
+          className="input"
+          placeholder="Location"
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          style={{ marginTop: 8 }}
+        />
+        <input
+          className="input"
+          type="number"
+          placeholder="Slots needed"
+          value={needed}
+          onChange={(e) => setNeeded(e.target.value)}
+          style={{ marginTop: 8 }}
+        />
+        <button
+          className="btn btn-primary btn-block"
+          style={{ marginTop: 12 }}
+          disabled={!title}
+          onClick={() =>
+            onSave({
+              title,
+              location,
+              needed: Number(needed),
+              description: 'New opportunity from the NGO dashboard.',
+              date: '2026-06-01',
+              skills: [],
+              image:
+                'https://placehold.co/800x400/eff4ff/1e40d8?text=Volunteer',
+            })
+          }
+        >
           Create
         </button>
       </div>
@@ -327,18 +503,136 @@ function VolunteerModal({ onClose, onSave }) {
 function ListModal({ title, items, onClose }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 480 }}>
+      <div
+        className="modal"
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: 480 }}
+      >
         <h3 style={{ marginTop: 0 }}>{title}</h3>
         {items.length === 0 ? (
           <p className="text-muted">Nothing here yet.</p>
         ) : (
-          <div className="stack" style={{ gap: 8, maxHeight: 320, overflowY: 'auto' }}>
+          <div
+            className="stack"
+            style={{ gap: 8, maxHeight: 320, overflowY: 'auto' }}
+          >
             {items.map((item, i) => (
-              <div key={i} className="card" style={{ fontSize: 13, padding: 12 }}>{item}</div>
+              <div
+                key={i}
+                className="card"
+                style={{ fontSize: 13, padding: 12 }}
+              >
+                {item}
+              </div>
             ))}
           </div>
         )}
-        <button className="btn btn-neutral btn-block" style={{ marginTop: 16 }} onClick={onClose}>Close</button>
+        <button
+          className="btn btn-neutral btn-block"
+          style={{ marginTop: 16 }}
+          onClick={onClose}
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function AttendanceModal({ opportunities, checkins, onClose }) {
+  /* group check-ins by opportunity */
+  const byOpportunity = {}
+  checkins.forEach((c) => {
+    if (!byOpportunity[c.opportunityId]) byOpportunity[c.opportunityId] = []
+    byOpportunity[c.opportunityId].push(c)
+  })
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div
+        className="modal"
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: 560, maxHeight: '80vh', overflowY: 'auto' }}
+      >
+        <h3 style={{ marginTop: 0 }}>Event attendance</h3>
+        <p
+          className="text-muted"
+          style={{ fontSize: 13, marginBottom: 20 }}
+        >
+          {checkins.length} total check-ins across {opportunities.length}{' '}
+          {opportunities.length === 1 ? 'event' : 'events'}
+        </p>
+
+        {opportunities.length === 0 ? (
+          <p className="text-muted">No events posted yet.</p>
+        ) : (
+          <div className="stack" style={{ gap: 20 }}>
+            {opportunities.map((o) => {
+              const list = byOpportunity[o.id] || []
+              return (
+                <div key={o.id}>
+                  <div
+                    style={{
+                      fontWeight: 800,
+                      fontSize: 14,
+                      marginBottom: 4,
+                    }}
+                  >
+                    {o.title}
+                  </div>
+                  <div
+                    className="text-muted"
+                    style={{ fontSize: 12, marginBottom: 10 }}
+                  >
+                    {o.location} · {o.date} · {list.length}/{o.needed} checked
+                    in
+                  </div>
+
+                  {list.length === 0 ? (
+                    <div
+                      className="text-muted"
+                      style={{ fontSize: 12, fontStyle: 'italic' }}
+                    >
+                      No check-ins yet.
+                    </div>
+                  ) : (
+                    <div className="stack" style={{ gap: 4 }}>
+                      {list.map((c) => (
+                        <div
+                          key={c.id}
+                          className="row-between"
+                          style={{
+                            padding: '8px 0',
+                            borderBottom: '1px solid var(--ink-100)',
+                            fontSize: 13,
+                          }}
+                        >
+                          <span className="receipt-ref">{c.code}</span>
+                          <span className="text-muted">
+                            {new Date(c.checkedInAt).toLocaleString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        <button
+          className="btn btn-neutral btn-block"
+          style={{ marginTop: 20 }}
+          onClick={onClose}
+        >
+          Close
+        </button>
       </div>
     </div>
   )
