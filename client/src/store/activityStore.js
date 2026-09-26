@@ -16,6 +16,13 @@ const EMPTY = {
   applications: [],
 }
 
+/* =========================================================
+   SEED DATA (demo content on first launch)
+   ========================================================= */
+
+const now = Date.now()
+const days = (n) => new Date(now - n * 24 * 60 * 60 * 1000).toISOString()
+
 const SEED_NOTIFICATIONS = [
   {
     id: 'seed-n-1',
@@ -25,7 +32,17 @@ const SEED_NOTIFICATIONS = [
     body: 'Discover NGOs, donate, volunteer, and track your impact in one place.',
     link: '/discover',
     read: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+    createdAt: days(0.5),
+  },
+  {
+    id: 'seed-n-2',
+    userId: 'u-1',
+    type: 'signup',
+    title: 'Volunteer ID issued',
+    body: 'You are confirmed for "Relief Pack Assembly Day".',
+    link: '/volunteer',
+    read: false,
+    createdAt: days(5),
   },
 ]
 
@@ -36,48 +53,114 @@ const SEED_COMMENTS = [
     userId: 'u-1',
     userName: 'Demo Supporter',
     text: 'So inspiring! Just donated to this campaign.',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+    createdAt: days(0.1),
   },
 ]
 
-function makeVolunteerCode() {
-  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  let code = 'KAIA-VOL-'
-  for (let i = 0; i < 8; i++) {
-    code += alphabet[Math.floor(Math.random() * alphabet.length)]
+const SEED_FOLLOWS = [
+  { userId: 'u-1', ngoId: 'ngo-1' },
+  { userId: 'u-1', ngoId: 'ngo-3' },
+  { userId: 'u-1', ngoId: 'ngo-4' },
+]
+
+const SEED_SIGNUPS = [
+  {
+    userId: 'u-1',
+    opportunityId: 'vol-1',
+    hours: 2,
+    status: 'registered',
+    createdAt: days(5),
+  },
+  {
+    userId: 'u-1',
+    opportunityId: 'vol-3',
+    hours: 0,
+    status: 'cancelled',
+    cancellationReason: 'Schedule conflict',
+    cancelledAt: days(2),
+    createdAt: days(7),
+  },
+]
+
+const SEED_VOLUNTEER_IDS = [
+  {
+    id: 'seed-vid-1',
+    code: 'KAIA-VOL-DEMO2026',
+    userId: 'u-1',
+    opportunityId: 'vol-1',
+    issuedAt: days(5),
+    revoked: false,
+  },
+]
+
+const SEED_APPLICATIONS = [
+  {
+    id: 'seed-app-1',
+    userId: 'u-1',
+    opportunityId: 'vol-1',
+    name: 'Demo Supporter',
+    age: 22,
+    email: 'demo@kaia.ph',
+    phone: '+63 917 123 4567',
+    address: 'Quezon City, Metro Manila',
+    emergencyName: 'Maria Dela Cruz',
+    emergencyPhone: '+63 917 765 4321',
+    skills: 'Event coordination',
+    availability: ['Weekend mornings', 'Weekend afternoons'],
+    submittedAt: days(5),
+  },
+  {
+    id: 'seed-app-2',
+    userId: 'u-fake-1',
+    opportunityId: 'vol-1',
+    name: 'Maria Santos',
+    age: 25,
+    email: 'maria.santos@example.com',
+    phone: '+63 918 234 5678',
+    address: 'Makati City, Metro Manila',
+    emergencyName: 'Pedro Santos',
+    emergencyPhone: '+63 918 876 5432',
+    skills: 'Logistics, warehouse work',
+    availability: ['Weekday evenings', 'Weekend mornings'],
+    submittedAt: days(3),
+  },
+  {
+    id: 'seed-app-3',
+    userId: 'u-fake-2',
+    opportunityId: 'vol-2',
+    name: 'Jose Reyes',
+    age: 30,
+    email: 'jose.reyes@example.com',
+    phone: '+63 919 345 6789',
+    address: 'Pasig City, Metro Manila',
+    emergencyName: 'Ana Reyes',
+    emergencyPhone: '+63 919 987 6543',
+    skills: 'Carpentry, painting',
+    availability: ['Weekend mornings', 'Weekend afternoons'],
+    submittedAt: days(2),
+  },
+]
+
+function buildInitialState() {
+  return {
+    ...EMPTY,
+    follows: [...SEED_FOLLOWS],
+    signups: [...SEED_SIGNUPS],
+    volunteerIds: [...SEED_VOLUNTEER_IDS],
+    applications: [...SEED_APPLICATIONS],
+    notifications: [...SEED_NOTIFICATIONS],
+    comments: [...SEED_COMMENTS],
   }
-  return code
 }
 
 function load() {
   try {
     const raw = localStorage.getItem(KEY)
-    if (!raw) {
-      return {
-        ...EMPTY,
-        notifications: [...SEED_NOTIFICATIONS],
-        comments: [...SEED_COMMENTS],
-      }
-    }
+    if (!raw) return buildInitialState()
     const parsed = JSON.parse(raw)
-    return {
-      ...EMPTY,
-      ...parsed,
-      notifications:
-        parsed.notifications && parsed.notifications.length > 0
-          ? parsed.notifications
-          : [...SEED_NOTIFICATIONS],
-      comments:
-        parsed.comments && parsed.comments.length > 0
-          ? parsed.comments
-          : [...SEED_COMMENTS],
-    }
+    return { ...EMPTY, ...parsed }
   } catch {
-    return {
-      ...EMPTY,
-      notifications: [...SEED_NOTIFICATIONS],
-      comments: [...SEED_COMMENTS],
-    }
+    return buildInitialState()
   }
 }
 
@@ -88,21 +171,27 @@ function save(state) {
 
 let state = load()
 
+function makeVolunteerCode() {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let code = 'KAIA-VOL-'
+  for (let i = 0; i < 8; i++) {
+    code += alphabet[Math.floor(Math.random() * alphabet.length)]
+  }
+  return code
+}
+
 export const activityStore = {
   getState: () => state,
 
   reset: () => {
-    state = {
-      ...EMPTY,
-      notifications: [...SEED_NOTIFICATIONS],
-      comments: [...SEED_COMMENTS],
-    }
+    state = buildInitialState()
     save(state)
   },
 
   /* ---------- follows ---------- */
   isFollowing: (userId, ngoId) =>
     state.follows.some((f) => f.userId === userId && f.ngoId === ngoId),
+
   toggleFollow: (userId, ngoId) => {
     const exists = state.follows.find(
       (f) => f.userId === userId && f.ngoId === ngoId
@@ -112,6 +201,7 @@ export const activityStore = {
     save(state)
     return !exists
   },
+
   getFollowedNgoIds: (userId) =>
     state.follows.filter((f) => f.userId === userId).map((f) => f.ngoId),
 
@@ -137,38 +227,33 @@ export const activityStore = {
     save(state)
     return receipt
   },
+
   getDonations: (userId) =>
     state.donations
       .filter((d) => d.userId === userId)
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
+
   getTotalDonated: (userId) =>
     state.donations
       .filter((d) => d.userId === userId)
       .reduce((sum, d) => sum + d.amount, 0),
+
   getReceipt: (id) => state.receipts.find((r) => r.id === id),
 
   /* ---------- volunteer signups ---------- */
   signUpForOpportunity: (userId, opportunityId, applicationDetails = {}) => {
-    // look for an existing signup
     const existing = state.signups.find(
       (s) => s.userId === userId && s.opportunityId === opportunityId
     )
 
-    // if a non-cancelled signup exists, do not allow a new one
     if (existing && existing.status !== 'cancelled') {
       return null
     }
 
-    // if there was a cancelled signup, remove it (and its volunteer id)
-    // so we can create a fresh one
     if (existing && existing.status === 'cancelled') {
       state.signups = state.signups.filter((s) => s !== existing)
       state.volunteerIds = state.volunteerIds.filter(
-        (v) =>
-          !(
-            v.userId === userId &&
-            v.opportunityId === opportunityId
-          )
+        (v) => !(v.userId === userId && v.opportunityId === opportunityId)
       )
     }
 
@@ -182,7 +267,6 @@ export const activityStore = {
     state.signups.push(signup)
 
     if (applicationDetails.name) {
-      // remove any old application for this user+opp, then add new
       state.applications = state.applications.filter(
         (a) => !(a.userId === userId && a.opportunityId === opportunityId)
       )
@@ -222,10 +306,14 @@ export const activityStore = {
       .filter((s) => s.userId === userId)
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
 
-  /* only active signups (not cancelled) */
   getActiveSignups: (userId) =>
     state.signups.filter(
       (s) => s.userId === userId && s.status !== 'cancelled'
+    ),
+
+  getCancelledSignups: (userId) =>
+    state.signups.filter(
+      (s) => s.userId === userId && s.status === 'cancelled'
     ),
 
   getSignup: (userId, opportunityId) =>
@@ -233,7 +321,6 @@ export const activityStore = {
       (s) => s.userId === userId && s.opportunityId === opportunityId
     ),
 
-  /* was this user's signup cancelled? */
   wasCancelled: (userId, opportunityId) => {
     const s = state.signups.find(
       (x) => x.userId === userId && x.opportunityId === opportunityId
@@ -250,7 +337,6 @@ export const activityStore = {
       )
       .reduce((sum, s) => sum + (s.hours || 0), 0),
 
-  /* ---------- cancel volunteer ---------- */
   cancelVolunteer: (userId, opportunityId, reason) => {
     const signup = state.signups.find(
       (s) => s.userId === userId && s.opportunityId === opportunityId
@@ -263,7 +349,6 @@ export const activityStore = {
     signup.cancelledAt = new Date().toISOString()
     signup.cancellationReason = reason
 
-    // revoke the volunteer ID
     const vid = state.volunteerIds.find(
       (v) =>
         v.userId === userId &&

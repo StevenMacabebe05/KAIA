@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useActivity } from '../store/useActivity'
@@ -6,12 +5,8 @@ import { CAMPAIGNS } from '../data/campaigns'
 import { OPPORTUNITIES } from '../data/opportunities'
 import { NGOS } from '../data/ngos'
 import { ACHIEVEMENTS } from '../data/achievements'
-import { getCancellationWindow } from '../utils/cancellation'
 import Icon from '../components/Icon'
 import ProgressBar from '../components/ProgressBar'
-import VolunteerTicket from '../components/VolunteerTicket'
-import CancelVolunteerModal from '../components/CancelVolunteerModal'
-import { useToast } from '../components/Toast'
 import {
   ActivityAreaChart,
   CategoryDonut,
@@ -31,10 +26,6 @@ export default function MyKaia() {
   const { user, logOut } = useAuth()
   const store = useActivity()
   const navigate = useNavigate()
-  const toast = useToast()
-
-  const [ticket, setTicket] = useState(null)
-  const [cancelling, setCancelling] = useState(null) // opportunity being cancelled
 
   if (!user) return null
 
@@ -46,7 +37,6 @@ export default function MyKaia() {
   )
   const follows = store.getFollowedNgoIds(user.id)
   const saves = store.getSaved(user.id)
-  const volunteerIds = store.getVolunteerIds(user.id)
   const checkIns = store.getCheckIns(user.id)
 
   const hours = signups
@@ -81,21 +71,6 @@ export default function MyKaia() {
   function handleLogout() {
     logOut()
     navigate('/login')
-  }
-
-  function handleCancelConfirm(reason) {
-    const opp = cancelling
-    const res = store.cancelVolunteer(user.id, opp.id, reason)
-    if (res.ok) {
-      store.addNotification(user.id, {
-        type: 'signup',
-        title: 'Volunteer signup cancelled',
-        body: `You cancelled "${opp.title}". Reason: ${reason}`,
-        link: '/my-kaia',
-      })
-      toast.push('Signup cancelled — the NGO has been notified.', 'info')
-    }
-    setCancelling(null)
   }
 
   return (
@@ -155,8 +130,8 @@ export default function MyKaia() {
             <Sparkline data={volunteerSpark} color="#f97316" />
           </div>
           <div className="stat-rich-delta">
-            {signups.filter((s) => s.status !== 'cancelled').length > 0
-              ? `↑ ${signups.filter((s) => s.status !== 'cancelled').length} active`
+            {signups.length > 0
+              ? `↑ ${signups.length} signups`
               : 'Join an opportunity'}
           </div>
         </div>
@@ -188,170 +163,6 @@ export default function MyKaia() {
           </div>
           <div className="stat-rich-delta">Bookmarked</div>
         </div>
-      </div>
-
-      {/* ---------- volunteer IDs / tickets ---------- */}
-      <div className="chart-card" style={{ marginBottom: 20 }}>
-        <div className="chart-card-header">
-          <div>
-            <h3 className="chart-title">Your volunteer tickets</h3>
-            <p className="chart-subtitle">
-              Manage your signups, tickets, and cancellations
-            </p>
-          </div>
-        </div>
-
-        {signups.length === 0 ? (
-          <p className="text-muted" style={{ fontSize: 13 }}>
-            Sign up for a volunteer opportunity to receive your QR ID.
-          </p>
-        ) : (
-          <div className="grid grid-2">
-            {signups.map((s) => {
-              const opp = OPPORTUNITIES.find(
-                (o) => o.id === s.opportunityId
-              )
-              if (!opp) return null
-
-              const vid = volunteerIds.find(
-                (v) => v.opportunityId === s.opportunityId
-              )
-              const attended = checkIns.some(
-                (c) => c.volunteerIdId === vid?.id
-              )
-              const isCancelled = s.status === 'cancelled'
-              const window = getCancellationWindow(opp.date)
-
-              return (
-                <div
-                  key={s.createdAt}
-                  className="card"
-                  style={{
-                    padding: 16,
-                    opacity: isCancelled ? 0.65 : 1,
-                    borderColor: isCancelled
-                      ? 'var(--red-600)'
-                      : 'var(--ink-100)',
-                  }}
-                >
-                  <div
-                    className="row-between"
-                    style={{ marginBottom: 8, alignItems: 'flex-start' }}
-                  >
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        style={{ fontWeight: 700, fontSize: 14 }}
-                      >
-                        {opp.title}
-                      </div>
-                      <div className="text-muted" style={{ fontSize: 12 }}>
-                        {opp.location} · {opp.date} · {opp.time}
-                      </div>
-                    </div>
-                    {isCancelled && (
-                      <span
-                        className="badge"
-                        style={{
-                          background: '#fee2e2',
-                          color: 'var(--red-600)',
-                        }}
-                      >
-                        Cancelled
-                      </span>
-                    )}
-                    {attended && !isCancelled && (
-                      <span
-                        className="badge"
-                        style={{
-                          background: '#dcfce7',
-                          color: '#15803d',
-                        }}
-                      >
-                        ✓ Attended
-                      </span>
-                    )}
-                  </div>
-
-                  {vid && !isCancelled && (
-                    <div
-                      className="receipt-ref"
-                      style={{
-                        display: 'inline-block',
-                        fontSize: 11,
-                        marginBottom: 10,
-                      }}
-                    >
-                      {vid.code}
-                    </div>
-                  )}
-
-                  {isCancelled ? (
-                    <div
-                      style={{
-                        padding: 10,
-                        background: '#fee2e2',
-                        borderRadius: 8,
-                        fontSize: 12,
-                        color: 'var(--red-600)',
-                        fontWeight: 600,
-                      }}
-                    >
-                      <div style={{ marginBottom: 4 }}>
-                        Cancelled {new Date(s.cancelledAt).toLocaleDateString()}
-                      </div>
-                      <div style={{ color: 'var(--ink-700)', fontWeight: 500 }}>
-                        Reason: {s.cancellationReason}
-                      </div>
-                    </div>
-                  ) : attended ? (
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: 'var(--green-600)',
-                        fontWeight: 700,
-                      }}
-                    >
-                      You attended this event. Thank you!
-                    </div>
-                  ) : (
-                    <>
-                      <div className="row" style={{ gap: 8 }}>
-                        <button
-                          className="btn btn-primary btn-sm"
-                          style={{ flex: 1 }}
-                          onClick={() =>
-                            setTicket({ volunteerId: vid, opportunity: opp })
-                          }
-                        >
-                          <Icon name="book" size={13} /> QR ticket
-                        </button>
-                        <button
-                          className="btn btn-neutral btn-sm"
-                          style={{ flex: 1 }}
-                          disabled={!window.allowed}
-                          title={window.message}
-                          onClick={() => setCancelling(opp)}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                      <div
-                        className="text-muted"
-                        style={{
-                          fontSize: 11,
-                          marginTop: 8,
-                          fontWeight: 600,
-                        }}
-                      >
-                        {window.message}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )}
       </div>
 
       {/* ---------- saved campaigns ---------- */}
@@ -588,7 +399,7 @@ export default function MyKaia() {
 
         <div className="chart-card">
           <div className="chart-card-header">
-            <h3 className="chart-title">Volunteer signups</h3>
+            <h3 className="chart-title">Volunteer history</h3>
             <span className="chart-subtitle">{signups.length} total</span>
           </div>
           {signups.length === 0 ? (
@@ -671,23 +482,6 @@ export default function MyKaia() {
           )}
         </div>
       </div>
-
-      {/* ---------- modals ---------- */}
-      {ticket && (
-        <VolunteerTicket
-          volunteerId={ticket.volunteerId}
-          opportunity={ticket.opportunity}
-          onClose={() => setTicket(null)}
-        />
-      )}
-
-      {cancelling && (
-        <CancelVolunteerModal
-          opportunity={cancelling}
-          onClose={() => setCancelling(null)}
-          onConfirm={handleCancelConfirm}
-        />
-      )}
     </div>
   )
 }

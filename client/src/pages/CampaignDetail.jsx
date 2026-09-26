@@ -11,6 +11,7 @@ import EmptyState from '../components/EmptyState'
 import Confetti from '../components/Confetti'
 import AnimatedCounter from '../components/AnimatedCounter'
 import SavedButton from '../components/SavedButton'
+import VerifiedBadge from '../components/VerifiedBadge'
 import Icon from '../components/Icon'
 
 const PRESETS = [100, 500, 1000, 2500]
@@ -29,6 +30,7 @@ export default function CampaignDetail() {
 
   const extra = store.getExtraCampaigns().find((c) => c.id === id)
   const campaign = CAMPAIGNS.find((c) => c.id === id) ?? extra
+
   if (!campaign) {
     return (
       <div className="container">
@@ -44,6 +46,10 @@ export default function CampaignDetail() {
   const myExtra = myDonations.reduce((s, d) => s + d.amount, 0)
   const liveRaised = campaign.raised + myExtra
   const liveDonors = campaign.donorCount + myDonations.length
+  const goalPct = Math.min(100, Math.round((liveRaised / campaign.goal) * 100))
+
+  const breakdown = campaign.howItWillBeUsed || []
+  const breakdownTotal = breakdown.reduce((s, b) => s + b.amount, 0)
 
   function handleDonate(amount) {
     if (!user) {
@@ -72,6 +78,7 @@ export default function CampaignDetail() {
     <div className="container">
       <Confetti trigger={confettiKey} />
 
+      {/* back link */}
       <Link
         to="/donate"
         className="row"
@@ -89,58 +96,169 @@ export default function CampaignDetail() {
         Back to campaigns
       </Link>
 
-      <div className="grid" style={{ gridTemplateColumns: '2fr 1fr', gap: 24 }}>
-        <div>
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <img
-              src={campaign.image}
-              alt=""
-              style={{ width: '100%', height: 320, objectFit: 'cover' }}
-            />
-            <div style={{ padding: 28 }}>
-              <div
-                className="row-between"
-                style={{ marginBottom: 8, alignItems: 'flex-start', gap: 16 }}
-              >
-                <h1
-                  style={{
-                    fontSize: 28,
-                    margin: 0,
-                    fontWeight: 800,
-                    letterSpacing: '-0.02em',
-                    flex: 1,
-                  }}
-                >
-                  {campaign.title}
-                </h1>
-                <StatusTag status={campaign.status} />
-              </div>
-              <Link
-                to={`/ngo/${ngo?.id}`}
-                className="text-muted"
-                style={{ fontSize: 13, fontWeight: 600 }}
-              >
-                by {ngo?.name}
-              </Link>
-
-              <div className="divider" />
-
-              <p
-                style={{
-                  fontSize: 15,
-                  lineHeight: 1.7,
-                  color: 'var(--ink-700)',
-                  margin: 0,
-                }}
-              >
-                {campaign.description}
-              </p>
-            </div>
+      {/* ---------- HERO IMAGE ---------- */}
+      <div className="campaign-hero">
+        <img src={campaign.image} alt="" className="campaign-hero-img" />
+        <div className="campaign-hero-overlay">
+          <div className="campaign-hero-top">
+            <StatusTag status={campaign.status} />
+          </div>
+          <div className="campaign-hero-bottom">
+            <h1 className="campaign-hero-title">{campaign.title}</h1>
+            <Link
+              to={`/ngo/${ngo?.id}`}
+              className="campaign-hero-ngo"
+            >
+              {ngo?.logo && (
+                <img src={ngo.logo} alt="" />
+              )}
+              <span>by {ngo?.name}</span>
+              <VerifiedBadge verified={ngo?.verified} />
+            </Link>
           </div>
         </div>
+      </div>
 
+      {/* ---------- MAIN GRID ---------- */}
+      <div
+        className="grid"
+        style={{ gridTemplateColumns: '2fr 1fr', gap: 24, marginTop: 28 }}
+      >
+        {/* LEFT */}
+        <div>
+          {/* quick facts */}
+          <div className="campaign-facts">
+            <div className="campaign-fact">
+              <div className="campaign-fact-icon">
+                <Icon name="map-pin" size={16} />
+              </div>
+              <div>
+                <div className="campaign-fact-label">Where it goes</div>
+                <div className="campaign-fact-value">
+                  {campaign.location || 'Philippines'}
+                </div>
+              </div>
+            </div>
+            <div className="campaign-fact">
+              <div className="campaign-fact-icon">
+                <Icon name="users" size={16} />
+              </div>
+              <div>
+                <div className="campaign-fact-label">Who it helps</div>
+                <div className="campaign-fact-value">
+                  {campaign.beneficiaries || 'Beneficiaries'}
+                </div>
+              </div>
+            </div>
+            <div className="campaign-fact">
+              <div className="campaign-fact-icon">
+                <Icon name="calendar" size={16} />
+              </div>
+              <div>
+                <div className="campaign-fact-label">Deadline</div>
+                <div className="campaign-fact-value">{campaign.deadline}</div>
+              </div>
+            </div>
+            <div className="campaign-fact">
+              <div className="campaign-fact-icon">
+                <Icon name="trending" size={16} />
+              </div>
+              <div>
+                <div className="campaign-fact-label">Category</div>
+                <div className="campaign-fact-value">{campaign.category}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* about */}
+          <div className="chart-card" style={{ marginBottom: 20 }}>
+            <div className="chart-card-header">
+              <h3 className="chart-title">About this campaign</h3>
+            </div>
+            <p className="campaign-body-text">{campaign.description}</p>
+          </div>
+
+          {/* how it will be used */}
+          {breakdown.length > 0 && (
+            <div className="chart-card" style={{ marginBottom: 20 }}>
+              <div className="chart-card-header">
+                <div>
+                  <h3 className="chart-title">How your donation is used</h3>
+                  <p className="chart-subtitle">
+                    Full breakdown of the ₱{breakdownTotal.toLocaleString()}{' '}
+                    target
+                  </p>
+                </div>
+              </div>
+
+              <div className="breakdown-list">
+                {breakdown.map((b) => {
+                  const pct = (b.amount / breakdownTotal) * 100
+                  return (
+                    <div key={b.label} className="breakdown-item">
+                      <div className="breakdown-row">
+                        <span className="breakdown-label">{b.label}</span>
+                        <span className="breakdown-amount">
+                          ₱{b.amount.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="breakdown-track">
+                        <div
+                          className="breakdown-fill"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <div className="breakdown-pct">
+                        {Math.round(pct)}% of total
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* impact examples */}
+          {campaign.impactExamples?.length > 0 && (
+            <div className="chart-card">
+              <div className="chart-card-header">
+                <div>
+                  <h3 className="chart-title">Your impact</h3>
+                  <p className="chart-subtitle">
+                    What your donation achieves
+                  </p>
+                </div>
+              </div>
+              <div className="impact-grid">
+                {campaign.impactExamples.map((imp) => (
+                  <div key={imp.amount} className="impact-card">
+                    <div className="impact-amount">
+                      ₱{imp.amount.toLocaleString()}
+                    </div>
+                    <div className="impact-desc">{imp.description}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT sidebar */}
         <aside>
           <div className="card" style={{ position: 'sticky', top: 88 }}>
+            <div className="campaign-sidebar-header">
+              <div>
+                <div className="campaign-sidebar-label">Progress</div>
+                <div className="campaign-sidebar-raised">
+                  ₱{liveRaised.toLocaleString()}
+                </div>
+                <div className="campaign-sidebar-goal">
+                  of ₱{campaign.goal.toLocaleString()} goal
+                </div>
+              </div>
+              <div className="campaign-sidebar-pct">{goalPct}%</div>
+            </div>
+
             <ProgressBar value={liveRaised} goal={campaign.goal} />
 
             <div
@@ -179,23 +297,11 @@ export default function CampaignDetail() {
             >
               Demo only — no real payment is processed.
             </p>
-
-            <div className="divider" />
-
-            <div style={{ fontSize: 13, color: 'var(--ink-700)' }}>
-              <div className="row-between" style={{ marginBottom: 8 }}>
-                <span>Category</span>
-                <strong>{campaign.category}</strong>
-              </div>
-              <div className="row-between">
-                <span>Deadline</span>
-                <strong>{campaign.deadline}</strong>
-              </div>
-            </div>
           </div>
         </aside>
       </div>
 
+      {/* ---------- DONATE MODAL ---------- */}
       {showModal && (
         <div className="modal-backdrop" onClick={closeModal}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -214,7 +320,9 @@ export default function CampaignDetail() {
                 >
                   <Icon name="heart" size={32} color="var(--orange-500)" />
                 </div>
-                <h2 style={{ margin: '0 0 8px', fontSize: 22 }}>Thank you!</h2>
+                <h2 style={{ margin: '0 0 8px', fontSize: 22 }}>
+                  Thank you!
+                </h2>
                 <p className="text-muted" style={{ marginBottom: 20 }}>
                   Your gift of
                 </p>
@@ -243,9 +351,7 @@ export default function CampaignDetail() {
                   </div>
                   <div className="donation-impact-row">
                     <span>New campaign progress</span>
-                    <strong>
-                      {Math.round((liveRaised / campaign.goal) * 100)}%
-                    </strong>
+                    <strong>{goalPct}%</strong>
                   </div>
                 </div>
 

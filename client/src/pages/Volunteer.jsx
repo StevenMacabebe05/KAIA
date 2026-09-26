@@ -4,11 +4,13 @@ import { NGOS } from '../data/ngos'
 import { useActivity } from '../store/useActivity'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../components/Toast'
+import { getCancellationWindow } from '../utils/cancellation'
 import EmptyState from '../components/EmptyState'
 import Confetti from '../components/Confetti'
 import VolunteerTicket from '../components/VolunteerTicket'
 import VolunteerApplicationForm from '../components/VolunteerApplicationForm'
 import VolunteerDetailModal from '../components/VolunteerDetailModal'
+import CancelVolunteerModal from '../components/CancelVolunteerModal'
 import Icon from '../components/Icon'
 
 export default function Volunteer() {
@@ -21,9 +23,24 @@ export default function Volunteer() {
   const [ticket, setTicket] = useState(null)
   const [detail, setDetail] = useState(null)
   const [applying, setApplying] = useState(null)
+  const [cancelling, setCancelling] = useState(null)
 
   const all = [...OPPORTUNITIES, ...store.getExtraOpportunities()]
+
+  const getSignupStatus = (opportunityId) => {
+    if (!user) return 'none'
+    const signup = store.getSignup(user.id, opportunityId)
+    if (!signup) return 'none'
+    return signup.status
+  }
+
+  const isSignedUp = (opportunityId) => {
+    const s = getSignupStatus(opportunityId)
+    return s === 'registered' || s === 'attended' || s === 'completed'
+  }
+
   const filtered = all.filter((o) => {
+    if (getSignupStatus(o.id) === 'cancelled') return false
     if (tab === 'nearby') return o.location === 'Quezon City'
     if (tab === 'this-week') {
       const d = new Date(o.date)
@@ -35,19 +52,6 @@ export default function Volunteer() {
   })
 
   const getNgo = (id) => NGOS.find((n) => n.id === id)
-
-  /* only count ACTIVE signups — cancelled ones do not count */
-  const isSignedUp = (opportunityId) => {
-    if (!user) return false
-    const signup = store.getSignup(user.id, opportunityId)
-    return signup && signup.status !== 'cancelled'
-  }
-
-  /* was the signup cancelled? */
-  const wasCancelled = (opportunityId) => {
-    if (!user) return null
-    return store.wasCancelled(user.id, opportunityId)
-  }
 
   function openDetail(opp) {
     setDetail(opp)
@@ -77,7 +81,6 @@ export default function Volunteer() {
     })
 
     if (!result) {
-      // safety: shouldn't happen since we allow re-signup now
       openTicket(opp)
       setApplying(null)
       return
@@ -98,6 +101,21 @@ export default function Volunteer() {
     toast.push('Application submitted — you are confirmed!', 'success')
   }
 
+  function handleCancelConfirm(reason) {
+    const opp = cancelling
+    const res = store.cancelVolunteer(user.id, opp.id, reason)
+    if (res.ok) {
+      store.addNotification(user.id, {
+        type: 'signup',
+        title: 'Volunteer signup cancelled',
+        body: `You cancelled "${opp.title}". Reason: ${reason}`,
+        link: '/volunteer',
+      })
+      toast.push('Signup cancelled — the NGO has been notified.', 'info')
+    }
+    setCancelling(null)
+  }
+
   return (
     <div className="container">
       <Confetti trigger={confettiKey} />
@@ -105,8 +123,8 @@ export default function Volunteer() {
       <div className="page-header">
         <h1 className="page-title">Volunteer opportunities</h1>
         <p className="page-subtitle">
-          Browse opportunities, review the details, then apply for your QR
-          volunteer ID.
+          Browse events, review the details, then apply for your QR volunteer
+          ID.
         </p>
       </div>
 
@@ -129,15 +147,15 @@ export default function Volunteer() {
       {filtered.length === 0 ? (
         <EmptyState
           icon="inbox"
-          title="No opportunities"
-          message="Try another filter."
+          title="No opportunities match"
+          message="Try a different filter."
         />
       ) : (
         <div className="grid grid-2">
           {filtered.map((o) => {
             const ngo = getNgo(o.ngoId)
             const signed = isSignedUp(o.id)
-            const cancelled = wasCancelled(o.id)
+            const window = getCancellationWindow(o.date)
 
             return (
               <article
@@ -158,7 +176,13 @@ export default function Volunteer() {
                   }}
                 />
 
-                <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>
+                <div
+                  style={{
+                    fontWeight: 700,
+                    fontSize: 16,
+                    marginBottom: 6,
+                  }}
+                >
                   {o.title}
                 </div>
 
@@ -196,17 +220,6 @@ export default function Volunteer() {
                   {o.description}
                 </p>
 
-                {cancelled && !signed && (
-                  <div className="previous-cancel-note">
-                    <Icon name="shield" size={12} color="var(--red-600)" />
-                    <span>
-                      You cancelled this signup on{' '}
-                      {new Date(cancelled.cancelledAt).toLocaleDateString()}.
-                      You can apply again below.
-                    </span>
-                  </div>
-                )}
-
                 <div
                   className="row-between"
                   onClick={(e) => e.stopPropagation()}
@@ -223,21 +236,32 @@ export default function Volunteer() {
                   </span>
 
                   {signed ? (
-                    <button
-                      type="button"
-                      className="btn btn-ghost"
-                      onClick={() => openTicket(o)}
-                    >
-                      <Icon name="book" size={14} />
-                      View QR ID
-                    </button>
+                    <div className="row" style={{ gap: 6 }}>
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => openTicket(o)}
+                      >
+                        <Icon name="book" size={13} />
+                        QR ID
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-neutral btn-sm"
+                        disabled={!window.allowed}
+                        title={window.message}
+                        onClick={() => setCancelling(o)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   ) : (
                     <button
                       type="button"
                       className="btn btn-primary"
                       onClick={() => openDetail(o)}
                     >
-                      {cancelled ? 'Re-apply' : 'View details'}
+                      View details
                       <Icon name="arrow-right" size={14} />
                     </button>
                   )}
@@ -276,6 +300,14 @@ export default function Volunteer() {
           volunteerId={ticket.volunteerId}
           opportunity={ticket.opportunity}
           onClose={() => setTicket(null)}
+        />
+      )}
+
+      {cancelling && (
+        <CancelVolunteerModal
+          opportunity={cancelling}
+          onClose={() => setCancelling(null)}
+          onConfirm={handleCancelConfirm}
         />
       )}
     </div>
