@@ -13,7 +13,6 @@ import {
   Sparkline,
 } from '../components/Charts'
 
-/* ---------- sample historical data ---------- */
 const DONATION_TREND = [
   { month: 'Aug', amount: 4200 },
   { month: 'Sep', amount: 6800 },
@@ -48,7 +47,6 @@ export default function NGODashboard() {
     (c) => c.status !== 'completed'
   ).length
 
-  /* ---------- charts data ---------- */
   const campaignChartData = campaigns.slice(0, 4).map((c) => ({
     name: c.title.length > 18 ? c.title.slice(0, 18) + '…' : c.title,
     raised: c.raised,
@@ -77,17 +75,17 @@ export default function NGODashboard() {
 
   const donationSpark = DONATION_TREND.map((d) => d.amount)
 
-  /* ---------- attendance ---------- */
   const opportunityIds = opportunities.map((o) => o.id)
   const checkins = store.getCheckInsForNgo(opportunityIds)
+  const applications = store.getApplicationsForNgo(opportunityIds)
 
-  /* ---------- quick action tiles ---------- */
   const TILES = [
     { key: 'scan', label: 'Scan check-in', icon: 'search', link: '/scan' },
     { key: 'post', label: 'Create Post', icon: 'megaphone' },
     { key: 'campaign', label: 'Create Campaign', icon: 'heart' },
     { key: 'volunteer', label: 'Create Volunteer', icon: 'hand' },
     { key: 'event', label: 'Create Event', icon: 'calendar' },
+    { key: 'applications', label: 'View Applications', icon: 'inbox' },
     { key: 'manage-campaigns', label: 'Manage Campaigns', icon: 'chart' },
     { key: 'manage-volunteers', label: 'Manage Volunteers', icon: 'users' },
     { key: 'attendance', label: 'View Attendance', icon: 'check-circle' },
@@ -100,12 +98,11 @@ export default function NGODashboard() {
       <div className="page-header">
         <h1 className="page-title">NGO Dashboard</h1>
         <p className="page-subtitle">
-          Manage campaigns, volunteers, and updates. Track performance in real
-          time.
+          Manage campaigns, volunteers, applications, and updates.
         </p>
       </div>
 
-      {/* ---------- stat cards with sparklines ---------- */}
+      {/* ---------- stat cards ---------- */}
       <div className="stat-row" style={{ marginBottom: 24 }}>
         <div className="stat-card-rich">
           <div className="stat-rich-top">
@@ -123,26 +120,20 @@ export default function NGODashboard() {
         <div className="stat-card-rich">
           <div className="stat-rich-top">
             <div>
-              <div className="stat-rich-value">{activeCampaigns}</div>
-              <div className="stat-rich-label">Active campaigns</div>
-            </div>
-            <Sparkline data={[1, 2, 2, 3, 3, 3]} color="#f97316" />
-          </div>
-          <div className="stat-rich-delta">↑ 1 new this month</div>
-        </div>
-
-        <div className="stat-card-rich">
-          <div className="stat-rich-top">
-            <div>
-              <div className="stat-rich-value">2,300</div>
-              <div className="stat-rich-label">Supporters</div>
+              <div className="stat-rich-value">
+                {applications.length}
+              </div>
+              <div className="stat-rich-label">Applications</div>
             </div>
             <Sparkline
-              data={[1800, 1950, 2050, 2100, 2200, 2300]}
-              color="#1e40d8"
+              data={[0, 1, 2, 3, applications.length]}
+              color="#f97316"
             />
           </div>
-          <div className="stat-rich-delta">↑ 4.3% this week</div>
+          <div className="stat-rich-delta">
+            {applications.filter((a) => a.status === 'cancelled').length}{' '}
+            cancelled
+          </div>
         </div>
 
         <div className="stat-card-rich">
@@ -156,13 +147,22 @@ export default function NGODashboard() {
               color="#16a34a"
             />
           </div>
-          <div className="stat-rich-delta">
-            {checkins.length > 0 ? '↑ new this month' : 'No check-ins yet'}
+          <div className="stat-rich-delta">↑ this month</div>
+        </div>
+
+        <div className="stat-card-rich">
+          <div className="stat-rich-top">
+            <div>
+              <div className="stat-rich-value">{activeCampaigns}</div>
+              <div className="stat-rich-label">Active campaigns</div>
+            </div>
+            <Sparkline data={[1, 2, 2, 3, 3, 3]} color="#1e40d8" />
           </div>
+          <div className="stat-rich-delta">Live now</div>
         </div>
       </div>
 
-      {/* ---------- main charts row ---------- */}
+      {/* ---------- charts ---------- */}
       <div className="chart-grid">
         <div className="chart-card">
           <div className="chart-card-header">
@@ -188,7 +188,6 @@ export default function NGODashboard() {
         </div>
       </div>
 
-      {/* ---------- campaign performance ---------- */}
       <div className="chart-card" style={{ marginBottom: 24 }}>
         <div className="chart-card-header">
           <div>
@@ -209,9 +208,6 @@ export default function NGODashboard() {
         <h2 className="page-title" style={{ fontSize: 22 }}>
           Quick actions
         </h2>
-        <p className="page-subtitle">
-          Everything you need to run your organization on KAIA.
-        </p>
       </div>
 
       <div className="grid grid-4">
@@ -228,9 +224,32 @@ export default function NGODashboard() {
                   display: 'grid',
                   placeItems: 'center',
                   marginBottom: 14,
+                  position: 'relative',
                 }}
               >
                 <Icon name={t.icon} size={20} />
+                {t.key === 'applications' && applications.length > 0 && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: -4,
+                      right: -4,
+                      minWidth: 16,
+                      height: 16,
+                      borderRadius: 999,
+                      background: 'var(--orange-500)',
+                      color: 'white',
+                      fontSize: 9,
+                      fontWeight: 800,
+                      display: 'grid',
+                      placeItems: 'center',
+                      padding: '0 4px',
+                      border: '2px solid white',
+                    }}
+                  >
+                    {applications.length}
+                  </span>
+                )}
               </div>
               <div style={{ fontWeight: 700, fontSize: 14 }}>{t.label}</div>
             </>
@@ -310,6 +329,14 @@ export default function NGODashboard() {
         />
       )}
 
+      {modal === 'applications' && (
+        <ApplicationsModal
+          applications={applications}
+          opportunities={opportunities}
+          onClose={() => setModal(null)}
+        />
+      )}
+
       {modal === 'manage-campaigns' && (
         <ListModal
           title="Campaigns"
@@ -354,8 +381,7 @@ export default function NGODashboard() {
           items={[
             `Total donated: ₱${totalRaised.toLocaleString()}`,
             `Campaigns: ${campaigns.length}`,
-            `Posts: ${posts.length}`,
-            `Volunteer opportunities: ${opportunities.length}`,
+            `Applications: ${applications.length}`,
             `Event check-ins: ${checkins.length}`,
           ]}
         />
@@ -367,6 +393,178 @@ export default function NGODashboard() {
 /* =========================================================
    MODALS
    ========================================================= */
+
+function ApplicationsModal({ applications, opportunities, onClose }) {
+  const [filter, setFilter] = useState('all')
+
+  const filtered =
+    filter === 'all'
+      ? applications
+      : applications.filter((a) => a.status === filter)
+
+  const counts = {
+    all: applications.length,
+    registered: applications.filter((a) => a.status === 'registered').length,
+    attended: applications.filter((a) => a.status === 'attended').length,
+    cancelled: applications.filter((a) => a.status === 'cancelled').length,
+  }
+
+  function getOpp(id) {
+    return opportunities.find((o) => o.id === id)
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div
+        className="modal"
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: 720, maxHeight: '88vh', overflowY: 'auto' }}
+      >
+        <div className="applications-header">
+          <div>
+            <h3 style={{ margin: 0 }}>Volunteer applications</h3>
+            <p
+              className="text-muted"
+              style={{ margin: '4px 0 0', fontSize: 13 }}
+            >
+              {applications.length} total applicants
+            </p>
+          </div>
+          <button
+            className="btn btn-neutral btn-sm"
+            onClick={onClose}
+            style={{ padding: '6px 10px' }}
+          >
+            <Icon name="x" size={14} />
+          </button>
+        </div>
+
+        <div className="filters" style={{ padding: '0 0 16px' }}>
+          {[
+            { key: 'all', label: `All (${counts.all})` },
+            { key: 'registered', label: `Active (${counts.registered})` },
+            { key: 'attended', label: `Attended (${counts.attended})` },
+            { key: 'cancelled', label: `Cancelled (${counts.cancelled})` },
+          ].map((f) => (
+            <button
+              key={f.key}
+              className={`pill ${filter === f.key ? 'is-active' : ''}`}
+              onClick={() => setFilter(f.key)}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {filtered.length === 0 ? (
+          <div className="text-muted" style={{ fontSize: 13, padding: 20 }}>
+            No applications yet.
+          </div>
+        ) : (
+          <div className="stack" style={{ gap: 12 }}>
+            {filtered.map((a) => {
+              const opp = getOpp(a.opportunityId)
+              const statusColor =
+                a.status === 'cancelled'
+                  ? { bg: '#fee2e2', fg: 'var(--red-600)' }
+                  : a.status === 'attended'
+                  ? { bg: '#dcfce7', fg: '#15803d' }
+                  : { bg: 'var(--blue-100)', fg: 'var(--blue-700)' }
+
+              return (
+                <div key={a.id} className="applicant-card">
+                  <div className="applicant-header">
+                    <div className="applicant-avatar">
+                      {a.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="applicant-name">{a.name}</div>
+                      <div className="applicant-meta">
+                        {a.age} years old · {a.email}
+                      </div>
+                    </div>
+                    <span
+                      className="badge"
+                      style={{ background: statusColor.bg, color: statusColor.fg }}
+                    >
+                      {a.status}
+                    </span>
+                  </div>
+
+                  <div className="applicant-event">
+                    <Icon name="calendar" size={12} color="var(--ink-500)" />
+                    <strong>{opp?.title}</strong>
+                    <span className="text-muted">
+                      {' '}
+                      · {opp?.location} · {opp?.date}
+                    </span>
+                  </div>
+
+                  <div className="applicant-grid">
+                    <div>
+                      <div className="applicant-label">Phone</div>
+                      <div className="applicant-value">{a.phone}</div>
+                    </div>
+                    <div>
+                      <div className="applicant-label">Address</div>
+                      <div className="applicant-value">{a.address}</div>
+                    </div>
+                    <div>
+                      <div className="applicant-label">Emergency contact</div>
+                      <div className="applicant-value">
+                        {a.emergencyName} · {a.emergencyPhone}
+                      </div>
+                    </div>
+                    {a.skills && (
+                      <div>
+                        <div className="applicant-label">Skills</div>
+                        <div className="applicant-value">{a.skills}</div>
+                      </div>
+                    )}
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <div className="applicant-label">Availability</div>
+                      <div className="vd-chips" style={{ marginTop: 4 }}>
+                        {a.availability.map((slot) => (
+                          <span
+                            key={slot}
+                            className="pill"
+                            style={{ cursor: 'default', fontSize: 11 }}
+                          >
+                            {slot}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {a.cancellationReason && (
+                    <div className="applicant-cancellation">
+                      <strong>Cancelled reason:</strong> {a.cancellationReason}
+                      <div className="text-muted" style={{ marginTop: 2, fontSize: 11 }}>
+                        on {new Date(a.cancelledAt).toLocaleString()}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="applicant-footer">
+                    <span className="text-muted" style={{ fontSize: 11 }}>
+                      Applied{' '}
+                      {new Date(a.submittedAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 
 function PostModal({ onClose, onSave }) {
   const [content, setContent] = useState('')
@@ -486,7 +684,12 @@ function VolunteerModal({ onClose, onSave }) {
               location,
               needed: Number(needed),
               description: 'New opportunity from the NGO dashboard.',
-              date: '2026-06-01',
+              date: '2026-12-01',
+              time: '9:00 AM – 12:00 PM',
+              commitment: '3-hour shift',
+              address: `${location}, Philippines`,
+              whatYouWillDo: ['Help with on-site activities'],
+              requirements: ['No prior experience needed'],
               skills: [],
               image:
                 'https://placehold.co/800x400/eff4ff/1e40d8?text=Volunteer',
@@ -540,7 +743,6 @@ function ListModal({ title, items, onClose }) {
 }
 
 function AttendanceModal({ opportunities, checkins, onClose }) {
-  /* group check-ins by opportunity */
   const byOpportunity = {}
   checkins.forEach((c) => {
     if (!byOpportunity[c.opportunityId]) byOpportunity[c.opportunityId] = []
@@ -609,12 +811,15 @@ function AttendanceModal({ opportunities, checkins, onClose }) {
                         >
                           <span className="receipt-ref">{c.code}</span>
                           <span className="text-muted">
-                            {new Date(c.checkedInAt).toLocaleString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              hour: 'numeric',
-                              minute: '2-digit',
-                            })}
+                            {new Date(c.checkedInAt).toLocaleString(
+                              'en-US',
+                              {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                              }
+                            )}
                           </span>
                         </div>
                       ))}
