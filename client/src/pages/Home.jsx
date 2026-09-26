@@ -21,17 +21,10 @@ export default function Home() {
   const store = useActivity()
 
   const followedIds = user ? store.getFollowedNgoIds(user.id) : []
-
   const allPosts = [...POSTS, ...store.getExtraPosts()]
     .filter((p) => followedIds.includes(p.ngoId))
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-
   const getNgo = (id) => NGOS.find((n) => n.id === id)
-
-  // NGOs the user does not currently follow
-  const suggestedNgos = NGOS
-    .filter((ngo) => !followedIds.includes(ngo.id))
-    .slice(0, 3)
 
   return (
     <div className="container">
@@ -44,45 +37,35 @@ export default function Home() {
             <span className="pulse-dot" />
             Live now · {NGOS.length} NGOs · {allPosts.length} updates
           </div>
-
           <h1>
             Everyone has something
             <br />
             they can{' '}
             <span className="gradient-text-orange">contribute</span>.
           </h1>
-
           <p>
             KAIA connects you with verified Filipino NGOs — donate,
             volunteer, follow, or simply spread awareness. Support
             happens in many forms.
           </p>
-
           <div className="hero-actions">
-            <Link
-              to="/discover"
-              className="btn btn-white btn-lg btn-shimmer"
-            >
+            <Link to="/discover" className="btn btn-white btn-lg btn-shimmer">
               Discover NGOs
               <Icon name="arrow-right" size={16} />
             </Link>
-
             <Link to="/donate" className="btn btn-outline-white btn-lg">
               Browse campaigns
             </Link>
           </div>
-
           <div className="hero-stats">
             <div className="hero-stat">
               <div className="hero-stat-value">6</div>
               <div className="hero-stat-label">Verified NGOs</div>
             </div>
-
             <div className="hero-stat">
               <div className="hero-stat-value">₱250k+</div>
               <div className="hero-stat-label">Raised this month</div>
             </div>
-
             <div className="hero-stat">
               <div className="hero-stat-value">1,200+</div>
               <div className="hero-stat-label">Volunteer hours</div>
@@ -94,31 +77,20 @@ export default function Home() {
       {/* ---------- FEED HEADER ---------- */}
       <div className="section-heading">
         <h2>From NGOs you follow</h2>
-
         <div className="section-heading-bar" />
-
         <Link to="/discover" className="btn btn-ghost btn-sm">
-          Follow to See More
+          Find more NGOs
         </Link>
       </div>
 
-      {/* ---------- FEED ---------- */}
       {allPosts.length === 0 ? (
         <EmptyState
           icon="inbox"
           title="Your feed is empty"
           message="Follow NGOs to see their updates here."
           action={
-            <Link
-              to="/discover"
-              style={{
-                marginTop: 16,
-                display: 'inline-block',
-              }}
-            >
-              <button className="btn btn-primary">
-                Discover NGOs
-              </button>
+            <Link to="/discover" style={{ marginTop: 16, display: 'inline-block' }}>
+              <button className="btn btn-primary">Discover NGOs</button>
             </Link>
           }
         />
@@ -126,59 +98,29 @@ export default function Home() {
         <div className="grid grid-2">
           {allPosts.map((post) => {
             const ngo = getNgo(post.ngoId)
-
             if (!ngo) return null
-
             return (
-              <article
-                key={post.id}
-                className="card card-hover"
-              >
-                <div
-                  className="row"
-                  style={{ marginBottom: 14 }}
-                >
+              <article key={post.id} className="card card-hover">
+                <div className="row" style={{ marginBottom: 14 }}>
                   <img
                     src={ngo.logo}
                     alt={ngo.name}
-                    style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 10,
-                      objectFit: 'cover',
-                    }}
+                    style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover' }}
                   />
-
-                  <div
-                    style={{
-                      flex: 1,
-                      minWidth: 0,
-                    }}
-                  >
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <Link
                       to={`/ngo/${ngo.id}`}
-                      style={{
-                        fontWeight: 700,
-                        color: 'var(--ink-900)',
-                        fontSize: 14,
-                      }}
+                      style={{ fontWeight: 700, color: 'var(--ink-900)', fontSize: 14 }}
                     >
                       {ngo.name}
                     </Link>
-
                     <div style={{ marginTop: 2 }}>
                       <VerifiedBadge verified={ngo.verified} />
                     </div>
                   </div>
                 </div>
 
-                <p
-                  style={{
-                    margin: '0 0 14px',
-                    fontSize: 14,
-                    lineHeight: 1.55,
-                  }}
-                >
+                <p style={{ margin: '0 0 14px', fontSize: 14, lineHeight: 1.55 }}>
                   {post.content}
                 </p>
 
@@ -186,33 +128,15 @@ export default function Home() {
                   <img
                     src={post.image}
                     alt=""
-                    style={{
-                      width: '100%',
-                      borderRadius: 10,
-                      marginBottom: 14,
-                    }}
+                    style={{ width: '100%', borderRadius: 10, marginBottom: 14 }}
                   />
                 )}
 
-                <div
-                  style={{
-                    display: 'flex',
-                    gap: 8,
-                  }}
-                >
-                  <Link
-                    to={`/ngo/${ngo.id}`}
-                    style={{ flex: 1 }}
-                  >
-                    <button className="btn btn-ghost btn-block btn-sm">
-                      View NGO
-                    </button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <Link to={`/ngo/${ngo.id}`} style={{ flex: 1 }}>
+                    <button className="btn btn-ghost btn-block btn-sm">View NGO</button>
                   </Link>
-
-                  <Link
-                    to="/donate"
-                    style={{ flex: 1 }}
-                  >
+                  <Link to="/donate" style={{ flex: 1 }}>
                     <button className="btn btn-accent btn-block btn-sm">
                       <Icon name="heart" size={14} />
                       Donate
@@ -223,91 +147,6 @@ export default function Home() {
             )
           })}
         </div>
-      )}
-
-      {/* ---------- SUGGESTED FOR YOU ---------- */}
-      {suggestedNgos.length > 0 && (
-        <section style={{ marginTop: 48 }}>
-          <div className="section-heading">
-            <h2>Suggested for You</h2>
-
-            <div className="section-heading-bar" />
-
-            <Link
-              to="/discover"
-              className="btn btn-ghost btn-sm"
-            >
-              See All
-            </Link>
-          </div>
-
-          <div className="grid grid-3">
-            {suggestedNgos.map((ngo) => (
-              <article
-                key={ngo.id}
-                className="card card-hover"
-              >
-                <div
-                  className="row"
-                  style={{ marginBottom: 14 }}
-                >
-                  <img
-                    src={ngo.logo}
-                    alt={ngo.name}
-                    style={{
-                      width: 50,
-                      height: 50,
-                      borderRadius: 10,
-                      objectFit: 'cover',
-                    }}
-                  />
-
-                  <div
-                    style={{
-                      flex: 1,
-                      minWidth: 0,
-                    }}
-                  >
-                    <Link
-                      to={`/ngo/${ngo.id}`}
-                      style={{
-                        fontWeight: 700,
-                        color: 'var(--ink-900)',
-                        fontSize: 14,
-                      }}
-                    >
-                      {ngo.name}
-                    </Link>
-
-                    <div style={{ marginTop: 2 }}>
-                      <VerifiedBadge
-                        verified={ngo.verified}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {ngo.description && (
-                  <p
-                    style={{
-                      margin: '0 0 14px',
-                      fontSize: 13,
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    {ngo.description}
-                  </p>
-                )}
-
-                <Link to={`/ngo/${ngo.id}`}>
-                  <button className="btn btn-ghost btn-block btn-sm">
-                    View NGO
-                  </button>
-                </Link>
-              </article>
-            ))}
-          </div>
-        </section>
       )}
     </div>
   )
