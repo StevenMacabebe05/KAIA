@@ -11,7 +11,6 @@ export default function ScanCheckIn() {
   const { user } = useAuth()
   const store = useActivity()
 
-  const scannerRef = useRef(null)
   const scannerInstanceRef = useRef(null)
 
   const [scanning, setScanning] = useState(false)
@@ -21,7 +20,6 @@ export default function ScanCheckIn() {
   const [manualCode, setManualCode] = useState('')
 
   useEffect(() => {
-    // Cleanup on unmount
     return () => {
       if (scannerInstanceRef.current) {
         scannerInstanceRef.current.clear().catch(() => {})
@@ -46,17 +44,16 @@ export default function ScanCheckIn() {
           qrbox: { width: 240, height: 240 },
         },
         (decodedText) => {
-          // fired on every detection — stop after first successful read
           handleScan(decodedText)
           scanner.stop().catch(() => {})
           setScanning(false)
         },
         () => {
-          // per-frame error (silent)
+          /* per-frame error — silent */
         }
       )
       setScanning(true)
-    } catch (err) {
+    } catch {
       setError(
         'Could not start the camera. Make sure you allowed camera access in your browser.'
       )
@@ -74,15 +71,12 @@ export default function ScanCheckIn() {
   }
 
   function handleScan(text) {
-    // The QR contains a full URL like:
-    //   http://localhost:5173/scan?code=KAIA-VOL-ABCD1234
-    // We only need the code.
     let code = text
     try {
       const url = new URL(text)
       code = url.searchParams.get('code') || text
     } catch {
-      // not a URL, assume it's the raw code
+      /* not a URL, assume raw code */
     }
     checkInCode(code)
   }
@@ -105,7 +99,6 @@ export default function ScanCheckIn() {
       return
     }
 
-    // The NGO rep must be the event's NGO
     if (user.role === 'ngo_rep' && user.ngoId !== opportunity.ngoId) {
       setError('This volunteer is registered for a different NGO event.')
       return
@@ -123,7 +116,6 @@ export default function ScanCheckIn() {
 
     const ngo = NGOS.find((n) => n.id === opportunity.ngoId)
 
-    // Notify the volunteer
     store.addNotification(volunteerId.userId, {
       type: 'signup',
       title: 'Checked in!',
@@ -131,7 +123,7 @@ export default function ScanCheckIn() {
       link: '/my-kaia',
     })
 
-    setConfettiKey(Date.now())
+    setConfettiKey((k) => k + 1)
     setResult({
       code,
       opportunity,
@@ -175,8 +167,10 @@ export default function ScanCheckIn() {
         </p>
       </div>
 
-      <div className="grid" style={{ gridTemplateColumns: '1.2fr 1fr', gap: 24 }}>
-        {/* Scanner */}
+      <div
+        className="grid"
+        style={{ gridTemplateColumns: '1.2fr 1fr', gap: 24 }}
+      >
         <div className="chart-card">
           <div className="chart-card-header">
             <div>
@@ -190,7 +184,10 @@ export default function ScanCheckIn() {
                 Stop
               </button>
             ) : (
-              <button className="btn btn-primary btn-sm" onClick={startScanner}>
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={startScanner}
+              >
                 <Icon name="search" size={14} /> Start camera
               </button>
             )}
@@ -206,7 +203,10 @@ export default function ScanCheckIn() {
 
           <div className="manual-entry">
             <label>Or enter the code manually</label>
-            <form onSubmit={handleManualSubmit} style={{ display: 'flex', gap: 8 }}>
+            <form
+              onSubmit={handleManualSubmit}
+              style={{ display: 'flex', gap: 8 }}
+            >
               <input
                 className="input"
                 placeholder="KAIA-VOL-XXXXXXXX"
@@ -224,7 +224,6 @@ export default function ScanCheckIn() {
           </div>
         </div>
 
-        {/* Result panel */}
         <div className="chart-card">
           <div className="chart-card-header">
             <h3 className="chart-title">Last check-in</h3>
