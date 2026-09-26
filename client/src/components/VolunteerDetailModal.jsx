@@ -21,7 +21,6 @@ export default function VolunteerDetailModal({
         className="modal volunteer-detail-modal"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ---------- HEADER with image ---------- */}
         <div className="vd-hero">
           <img src={opportunity.image} alt="" className="vd-hero-image" />
           <button
@@ -40,7 +39,6 @@ export default function VolunteerDetailModal({
         </div>
 
         <div className="vd-body">
-          {/* ---------- TITLE ---------- */}
           <h2 className="vd-title">{opportunity.title}</h2>
           <div className="vd-ngo">
             {ngo?.logo && (
@@ -52,7 +50,6 @@ export default function VolunteerDetailModal({
             </div>
           </div>
 
-          {/* ---------- QUICK FACTS grid ---------- */}
           <div className="vd-facts">
             <div className="vd-fact">
               <div className="vd-fact-icon">
@@ -96,7 +93,6 @@ export default function VolunteerDetailModal({
             </div>
           </div>
 
-          {/* ---------- ADDRESS ---------- */}
           {opportunity.address && (
             <div className="vd-address">
               <Icon name="map-pin" size={14} color="var(--ink-500)" />
@@ -104,13 +100,11 @@ export default function VolunteerDetailModal({
             </div>
           )}
 
-          {/* ---------- ABOUT ---------- */}
           <div className="vd-section">
             <div className="vd-section-title">About this opportunity</div>
             <p className="vd-text">{opportunity.description}</p>
           </div>
 
-          {/* ---------- WHAT YOU'LL DO ---------- */}
           {opportunity.whatYouWillDo?.length > 0 && (
             <div className="vd-section">
               <div className="vd-section-title">What you'll do</div>
@@ -127,7 +121,6 @@ export default function VolunteerDetailModal({
             </div>
           )}
 
-          {/* ---------- REQUIREMENTS ---------- */}
           {opportunity.requirements?.length > 0 && (
             <div className="vd-section">
               <div className="vd-section-title">Requirements</div>
@@ -142,7 +135,6 @@ export default function VolunteerDetailModal({
             </div>
           )}
 
-          {/* ---------- SKILLS ---------- */}
           {opportunity.skills?.length > 0 && (
             <div className="vd-section">
               <div className="vd-section-title">Skills that help</div>
@@ -157,7 +149,6 @@ export default function VolunteerDetailModal({
           )}
         </div>
 
-        {/* ---------- FOOTER CTA ---------- */}
         <div className="vd-footer">
           {!user ? (
             <div className="vd-login-hint">

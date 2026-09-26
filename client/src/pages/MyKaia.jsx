@@ -91,7 +91,10 @@ export default function MyKaia() {
             >
               {user.name}
             </h1>
-            <div className="text-muted" style={{ fontSize: 14, marginTop: 2 }}>
+            <div
+              className="text-muted"
+              style={{ fontSize: 14, marginTop: 2 }}
+            >
               {user.email}
             </div>
           </div>
