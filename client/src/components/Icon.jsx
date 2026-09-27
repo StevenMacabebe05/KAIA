@@ -63,6 +63,10 @@ export default function Icon({ name, size = 18, color = 'currentColor', strokeWi
       return <svg {...props}><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="M22 4L12 14l-3-3"/></svg>
     case 'x':
       return <svg {...props}><path d="M18 6L6 18M6 6l12 12"/></svg>
+    case 'message-circle':
+      return <svg {...props}><path d="M21 11.5a8.4 8.4 0 0 1-1 4 8.5 8.5 0 0 1-7.5 4.5 8.4 8.4 0 0 1-4-1L3 21l1.9-5.4a8.4 8.4 0 0 1-1-4A8.5 8.5 0 0 1 8.4 4a8.4 8.4 0 0 1 4-1 8.5 8.5 0 0 1 8.5 8.5z"/></svg>
+    case 'share':
+      return <svg {...props}><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
     default:
       return null
   }
