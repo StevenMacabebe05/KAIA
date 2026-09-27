@@ -56,9 +56,25 @@ const SEED_COMMENTS = [
   },
   {
     id: 'sc-3',
-    postId: 'p-1',
+    postId: 'p-paws',
     userId: 'u-fake-3',
     userName: 'Andrea Cruz',
+    text: 'Donated 100 points! Happy to help the kapon program 💚',
+    createdAt: days(0.1),
+  },
+  {
+    id: 'sc-4',
+    postId: 'p-paws',
+    userId: 'u-fake-4',
+    userName: 'Carlo Mendoza',
+    text: 'Just scheduled my cat for her spay. Thanks PAWS!',
+    createdAt: days(0.2),
+  },
+  {
+    id: 'sc-5',
+    postId: 'p-1',
+    userId: 'u-fake-5',
+    userName: 'Liza Tan',
     text: 'So inspiring! Just donated to this campaign.',
     createdAt: days(0.1),
   },
@@ -112,6 +128,9 @@ const SEED_SHARES = [
   { id: 'sh-3', postId: 'p-call', userId: 'u-fake-3', sharedAt: days(0.1) },
   { id: 'sh-4', postId: 'p-call', userId: 'u-fake-4', sharedAt: days(0.15) },
   { id: 'sh-5', postId: 'p-call', userId: 'u-fake-5', sharedAt: days(0.2) },
+  { id: 'sh-6', postId: 'p-paws', userId: 'u-fake-1', sharedAt: days(0.04) },
+  { id: 'sh-7', postId: 'p-paws', userId: 'u-fake-2', sharedAt: days(0.06) },
+  { id: 'sh-8', postId: 'p-paws', userId: 'u-fake-3', sharedAt: days(0.12) },
 ]
 
 const SEED_FAKE_APPLICATIONS = [

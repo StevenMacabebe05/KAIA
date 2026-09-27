@@ -10,6 +10,19 @@ export const POSTS = [
     pinned: true,
   },
   {
+    id: 'p-paws',
+    ngoId: 'ngo-3',
+    type: 'update',
+    content:
+      'YOUR GLOBE REWARDS POINTS CAN HELP PROVIDE FREE KAPON! 🐾💚\n\nYour Globe Rewards points help PAWS bring free kapon to more communities, making spay and neuter services accessible to more pet owners and helping prevent pet overpopulation. Every point counts! 💚\n\nHOW TO DONATE:\n1. Open your GlobeOne app and tap Rewards.\n2. In the search bar, type PAWS PHILIPPINES.\n3. Choose how many points you\'d like to donate: 1, 5, 10, 50, or 100 points.\n4. Tap Redeem and wait for the confirmation.\n\nWant to bring a kapon outreach to your community? Learn more here: paws.org.ph/kapon-outreach/\n\nYou can also support PAWS by booking our low-cost veterinary services at the PAWS Shelter:\n🐾 Kapon: paws.org.ph/spay-neuter\n🦷 Dental: paws.org.ph/dental-services-form\n💉 Deworming & Vaccination: paws.org.ph/deworming-vaccination-form\n\n#PAWSPhilippines #KaponAngSolusyon #LowCostKapon #GlobeRewards',
+    images: [
+      '/images/posts/paws-1.jpg',
+      '/images/posts/paws-2.jpg',
+      '/images/posts/paws-3.jpg',
+    ],
+    createdAt: '2026-01-19T20:00:00.000Z',
+  },
+  {
     id: 'p-1',
     ngoId: 'ngo-1',
     type: 'update',
