@@ -1,5 +1,6 @@
 import { Outlet, Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../context/ThemeContext'
 import Icon from './Icon'
 import NotificationBell from './NotificationBell'
 import GlobalSearch from './GlobalSearch'
@@ -18,6 +19,7 @@ export default function Layout() {
 
 function Header() {
   const { user, logOut } = useAuth()
+  const { isDark, toggleTheme } = useTheme()
   const navigate = useNavigate()
 
   function handleLogout() {
@@ -75,7 +77,17 @@ function Header() {
         </nav>
 
         <div className="header-actions">
+          <button
+            className="theme-toggle"
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
+            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            <Icon name={isDark ? 'sun' : 'moon'} size={18} />
+          </button>
+
           <GlobalSearch />
+
           {user ? (
             <>
               <NotificationBell />

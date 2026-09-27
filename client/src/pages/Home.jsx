@@ -43,6 +43,10 @@ export default function Home() {
   const store = useActivity()
   const toast = useToast()
 
+  const [feedTab, setFeedTab] = useState('all')
+  const [activeCommentPost, setActiveCommentPost] = useState(null)
+  const [commentText, setCommentText] = useState('')
+
   const [likedPosts, setLikedPosts] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('kaia_likes') || '{}')
@@ -53,13 +57,40 @@ export default function Home() {
 
   const followedIds = user ? store.getFollowedNgoIds(user.id) : []
 
-  const feedPosts = [...POSTS, ...store.getExtraPosts()]
-    .filter((p) => followedIds.includes(p.ngoId))
-    .sort((a, b) => {
+  const allPosts = [...POSTS, ...store.getExtraPosts()]
+
+  /* feed tab filtering */
+  const feedPosts = (() => {
+    if (feedTab === 'following') {
+      return allPosts
+        .filter((p) => followedIds.includes(p.ngoId))
+        .sort((a, b) => {
+          if (a.pinned && !b.pinned) return -1
+          if (!a.pinned && b.pinned) return 1
+          return new Date(b.createdAt) - new Date(a.createdAt)
+        })
+    }
+
+    if (feedTab === 'trending') {
+      return [...allPosts]
+        .map((p) => {
+          const likes = likedPosts[p.id] ? 1 : 0
+          const comments = store.getCommentCount(p.id)
+          const shares = store.getShareCount(p.id)
+          const score = comments * 2 + shares * 3 + likes
+          return { post: p, score }
+        })
+        .sort((a, b) => b.score - a.score)
+        .map((x) => x.post)
+    }
+
+    /* all — show everything */
+    return [...allPosts].sort((a, b) => {
       if (a.pinned && !b.pinned) return -1
       if (!a.pinned && b.pinned) return 1
       return new Date(b.createdAt) - new Date(a.createdAt)
     })
+  })()
 
   const suggestions = NGOS.filter(
     (n) => !followedIds.includes(n.id)
@@ -93,7 +124,7 @@ export default function Home() {
     const url = `${window.location.origin}/ngo/${ngo?.id || ''}`
     if (navigator.share) {
       navigator
-        .share({ title: `Check this out on KAIA`, url })
+        .share({ title: 'Check this out on KAIA', url })
         .catch(() => {})
     } else {
       navigator.clipboard.writeText(url)
@@ -101,12 +132,30 @@ export default function Home() {
     }
   }
 
+  function openCommentBox(postId) {
+    if (!user) {
+      toast.push('Log in to comment', 'info')
+      return
+    }
+    setActiveCommentPost(postId)
+    setCommentText('')
+  }
+
+  function submitComment(postId) {
+    if (!commentText.trim()) return
+    store.addComment(postId, user.id, user.name, commentText)
+    setCommentText('')
+    setActiveCommentPost(null)
+    toast.push('Comment posted', 'success', 1500)
+  }
+
   function renderImages(post) {
-    const images = post.images && post.images.length > 0
-      ? post.images
-      : post.image
-      ? [post.image]
-      : []
+    const images =
+      post.images && post.images.length > 0
+        ? post.images
+        : post.image
+        ? [post.image]
+        : []
 
     if (images.length === 0) return null
 
@@ -125,7 +174,12 @@ export default function Home() {
     }
 
     return (
-      <div className={`feed-post-photo gallery count-${Math.min(images.length, 4)}`}>
+      <div
+        className={`feed-post-photo gallery count-${Math.min(
+          images.length,
+          4
+        )}`}
+      >
         {images.slice(0, 4).map((src, i) => (
           <div key={i} className="feed-photo-cell">
             <img
@@ -175,18 +229,50 @@ export default function Home() {
             </Link>
           </div>
 
+          {/* feed tabs */}
+          <div className="feed-tabs">
+            {[
+              { key: 'all', label: 'All', icon: 'globe' },
+              { key: 'following', label: 'Following', icon: 'users' },
+              { key: 'trending', label: 'Trending', icon: 'trending' },
+            ].map((t) => (
+              <button
+                key={t.key}
+                className={`feed-tab ${
+                  feedTab === t.key ? 'active' : ''
+                }`}
+                onClick={() => setFeedTab(t.key)}
+              >
+                <Icon name={t.icon} size={14} />
+                {t.label}
+              </button>
+            ))}
+          </div>
+
           {feedPosts.length === 0 ? (
             <EmptyState
               icon="inbox"
-              title="Your feed is empty"
-              message="Follow NGOs to see their updates here."
+              title={
+                feedTab === 'following'
+                  ? 'Your feed is empty'
+                  : 'No posts yet'
+              }
+              message={
+                feedTab === 'following'
+                  ? 'Follow NGOs to see their updates here.'
+                  : 'Check back soon for new updates.'
+              }
               action={
-                <Link
-                  to="/discover"
-                  style={{ marginTop: 16, display: 'inline-block' }}
-                >
-                  <button className="btn btn-primary">Discover NGOs</button>
-                </Link>
+                feedTab === 'following' ? (
+                  <Link
+                    to="/discover"
+                    style={{ marginTop: 16, display: 'inline-block' }}
+                  >
+                    <button className="btn btn-primary">
+                      Discover NGOs
+                    </button>
+                  </Link>
+                ) : null
               }
             />
           ) : (
@@ -202,6 +288,7 @@ export default function Home() {
                 const typeLabel =
                   POST_TYPE_LABELS[post.type] || 'Update'
                 const previewComments = comments.slice(-2)
+                const isCommenting = activeCommentPost === post.id
 
                 return (
                   <article key={post.id} className="feed-post">
@@ -236,7 +323,7 @@ export default function Home() {
                     {/* images */}
                     {renderImages(post)}
 
-                    {/* action row (moved ABOVE comments) */}
+                    {/* action row */}
                     <footer className="feed-post-actions">
                       <button
                         type="button"
@@ -248,21 +335,24 @@ export default function Home() {
                         <Icon
                           name="heart"
                           size={16}
-                          color={liked ? 'var(--red-600)' : 'currentColor'}
+                          color={
+                            liked ? 'var(--red-600)' : 'currentColor'
+                          }
                         />
                         <span>{liked ? 'Liked' : 'Like'}</span>
                       </button>
 
-                      <Link
-                        to={`/ngo/${ngo.id}`}
+                      <button
+                        type="button"
                         className="feed-action"
+                        onClick={() => openCommentBox(post.id)}
                       >
                         <Icon name="message-circle" size={16} />
                         <span>
                           Comment
                           {commentCount > 0 && ` · ${commentCount}`}
                         </span>
-                      </Link>
+                      </button>
 
                       <button
                         type="button"
@@ -285,7 +375,7 @@ export default function Home() {
                       </Link>
                     </footer>
 
-                    {/* 2 comment previews */}
+                    {/* comment previews */}
                     {previewComments.length > 0 && (
                       <div className="feed-comment-preview">
                         {previewComments.map((c) => (
@@ -311,6 +401,36 @@ export default function Home() {
                             View all {commentCount} comments
                           </Link>
                         )}
+                      </div>
+                    )}
+
+                    {/* inline comment input */}
+                    {isCommenting && (
+                      <div className="feed-comment-input-wrap">
+                        <div className="feed-comment-avatar">
+                          {user?.name?.charAt(0).toUpperCase() || 'A'}
+                        </div>
+                        <input
+                          className="feed-comment-input"
+                          placeholder="Write a comment…"
+                          value={commentText}
+                          onChange={(e) => setCommentText(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') submitComment(post.id)
+                            if (e.key === 'Escape') {
+                              setActiveCommentPost(null)
+                              setCommentText('')
+                            }
+                          }}
+                          autoFocus
+                        />
+                        <button
+                          className="btn btn-primary btn-sm"
+                          disabled={!commentText.trim()}
+                          onClick={() => submitComment(post.id)}
+                        >
+                          Post
+                        </button>
                       </div>
                     )}
                   </article>
