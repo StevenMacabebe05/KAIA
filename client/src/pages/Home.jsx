@@ -31,7 +31,11 @@ function timeAgo(iso) {
   if (s < 60) return 'just now'
   if (s < 3600) return `${Math.floor(s / 60)}m ago`
   if (s < 86400) return `${Math.floor(s / 3600)}h ago`
-  return `${Math.floor(s / 86400)}d ago`
+  if (s < 604800) return `${Math.floor(s / 86400)}d ago`
+  return new Date(iso).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  })
 }
 
 export default function Home() {
@@ -39,7 +43,6 @@ export default function Home() {
   const store = useActivity()
   const toast = useToast()
 
-  /* likes persisted to localStorage */
   const [likedPosts, setLikedPosts] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('kaia_likes') || '{}')
@@ -52,7 +55,11 @@ export default function Home() {
 
   const feedPosts = [...POSTS, ...store.getExtraPosts()]
     .filter((p) => followedIds.includes(p.ngoId))
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1
+      if (!a.pinned && b.pinned) return 1
+      return new Date(b.createdAt) - new Date(a.createdAt)
+    })
 
   const suggestions = NGOS.filter(
     (n) => !followedIds.includes(n.id)
@@ -74,26 +81,19 @@ export default function Home() {
       try {
         localStorage.setItem('kaia_likes', JSON.stringify(next))
       } catch {
-        /* ignore quota errors */
+        /* ignore */
       }
       return next
     })
   }
 
-  function handleComment(postId) {
-    toast.push('Comments are available on the NGO page.', 'info', 1800)
-    setTimeout(() => {
-      window.location.href = `/ngo/${POSTS.find((p) => p.id === postId)?.ngoId || ''}`
-    }, 400)
-  }
-
-  function handleShare(postId) {
-    const url = `${window.location.origin}/ngo/${
-      POSTS.find((p) => p.id === postId)?.ngoId || ''
-    }`
+  function handleShare(post) {
+    if (user) store.sharePost(user.id, post.id)
+    const ngo = getNgo(post.ngoId)
+    const url = `${window.location.origin}/ngo/${ngo?.id || ''}`
     if (navigator.share) {
       navigator
-        .share({ title: 'Check this out on KAIA', url })
+        .share({ title: `Check this out on KAIA`, url })
         .catch(() => {})
     } else {
       navigator.clipboard.writeText(url)
@@ -101,21 +101,61 @@ export default function Home() {
     }
   }
 
+  function renderImages(post) {
+    const images = post.images && post.images.length > 0
+      ? post.images
+      : post.image
+      ? [post.image]
+      : []
+
+    if (images.length === 0) return null
+
+    if (images.length === 1) {
+      return (
+        <div className="feed-post-photo single">
+          <img
+            src={images[0]}
+            alt=""
+            onError={(e) => {
+              e.target.parentElement.style.display = 'none'
+            }}
+          />
+        </div>
+      )
+    }
+
+    return (
+      <div className={`feed-post-photo gallery count-${Math.min(images.length, 4)}`}>
+        {images.slice(0, 4).map((src, i) => (
+          <div key={i} className="feed-photo-cell">
+            <img
+              src={src}
+              alt=""
+              onError={(e) => {
+                e.target.parentElement.style.display = 'none'
+              }}
+            />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div className="container">
-      {/* ---------- SLIM HERO ---------- */}
+      {/* ---------- HERO ---------- */}
       <section className="hero-slim">
         <HeroCarousel slides={HERO_SLIDES} interval={5500} />
         <div className="hero-slim-overlay" />
         <div className="hero-slim-content">
-          <div className="hero-eyebrow">
-            <span className="pulse-dot" />
-            Live · {NGOS.length} NGOs · {feedPosts.length} updates
-          </div>
           <h1 className="hero-slim-title">
             Everyone has something they can{' '}
             <span className="gradient-text-orange">contribute</span>.
           </h1>
+          <p className="hero-slim-subtitle">
+            KAIA connects you with verified Filipino NGOs — donate, volunteer,
+            follow, or simply spread awareness. Support happens in many forms.
+          </p>
         </div>
       </section>
 
@@ -156,11 +196,16 @@ export default function Home() {
                 if (!ngo) return null
 
                 const liked = !!likedPosts[post.id]
+                const comments = store.getComments(post.id)
+                const commentCount = comments.length
+                const shareCount = store.getShareCount(post.id)
                 const typeLabel =
                   POST_TYPE_LABELS[post.type] || 'Update'
+                const previewComments = comments.slice(-2)
 
                 return (
                   <article key={post.id} className="feed-post">
+                    {/* header */}
                     <header className="feed-post-header">
                       <img
                         src={ngo.logo}
@@ -175,7 +220,9 @@ export default function Home() {
                           {ngo.name}
                         </Link>
                         <div className="feed-post-subtitle">
-                          <span className="feed-post-type">{typeLabel}</span>
+                          <span className="feed-post-type">
+                            {typeLabel}
+                          </span>
                           <span className="feed-post-dot">·</span>
                           <span>{timeAgo(post.createdAt)}</span>
                         </div>
@@ -183,8 +230,13 @@ export default function Home() {
                       <VerifiedBadge verified={ngo.verified} />
                     </header>
 
+                    {/* caption */}
                     <p className="feed-post-text">{post.content}</p>
 
+                    {/* images */}
+                    {renderImages(post)}
+
+                    {/* action row (moved ABOVE comments) */}
                     <footer className="feed-post-actions">
                       <button
                         type="button"
@@ -201,22 +253,27 @@ export default function Home() {
                         <span>{liked ? 'Liked' : 'Like'}</span>
                       </button>
 
-                      <button
-                        type="button"
+                      <Link
+                        to={`/ngo/${ngo.id}`}
                         className="feed-action"
-                        onClick={() => handleComment(post.id)}
                       >
                         <Icon name="message-circle" size={16} />
-                        <span>Comment</span>
-                      </button>
+                        <span>
+                          Comment
+                          {commentCount > 0 && ` · ${commentCount}`}
+                        </span>
+                      </Link>
 
                       <button
                         type="button"
                         className="feed-action"
-                        onClick={() => handleShare(post.id)}
+                        onClick={() => handleShare(post)}
                       >
                         <Icon name="share" size={16} />
-                        <span>Share</span>
+                        <span>
+                          Share
+                          {shareCount > 0 && ` · ${shareCount}`}
+                        </span>
                       </button>
 
                       <Link
@@ -227,6 +284,35 @@ export default function Home() {
                         <span>Donate</span>
                       </Link>
                     </footer>
+
+                    {/* 2 comment previews */}
+                    {previewComments.length > 0 && (
+                      <div className="feed-comment-preview">
+                        {previewComments.map((c) => (
+                          <div key={c.id} className="feed-comment">
+                            <div className="feed-comment-avatar">
+                              {c.userName.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="feed-comment-bubble">
+                              <div className="feed-comment-name">
+                                {c.userName}
+                              </div>
+                              <div className="feed-comment-text">
+                                {c.text}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        {commentCount > 2 && (
+                          <Link
+                            to={`/ngo/${ngo.id}`}
+                            className="feed-view-comments"
+                          >
+                            View all {commentCount} comments
+                          </Link>
+                        )}
+                      </div>
+                    )}
                   </article>
                 )
               })}
@@ -236,7 +322,6 @@ export default function Home() {
 
         {/* RIGHT — SIDEBAR */}
         <aside className="home-sidebar">
-          {/* You might like */}
           <div className="sidebar-card">
             <div className="sidebar-card-header">
               <h3 className="sidebar-card-title">You might like</h3>
@@ -294,7 +379,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Volunteer now */}
           <div className="sidebar-card">
             <div className="sidebar-card-header">
               <h3 className="sidebar-card-title">Volunteer now</h3>
@@ -331,7 +415,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Trending campaigns */}
           <div className="sidebar-card">
             <div className="sidebar-card-header">
               <h3 className="sidebar-card-title">Trending campaigns</h3>

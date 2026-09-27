@@ -2034,3 +2034,67 @@ textarea.input { resize: vertical; min-height: 90px; }
     font-size: 12px;
   }
 }
+/* =========================================================
+   FEED POST — MULTI-IMAGE GALLERY
+   ========================================================= */
+
+.feed-post-photo.single img {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 520px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.feed-post-photo.gallery {
+  display: grid;
+  gap: 4px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--ink-50);
+}
+
+.feed-post-photo.gallery.count-2 {
+  grid-template-columns: 1fr 1fr;
+  aspect-ratio: 2 / 1;
+}
+
+.feed-post-photo.gallery.count-3 {
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  aspect-ratio: 2 / 1;
+}
+
+.feed-post-photo.gallery.count-3 .feed-photo-cell:first-child {
+  grid-row: 1 / 3;
+}
+
+.feed-post-photo.gallery.count-4 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  aspect-ratio: 1 / 1;
+}
+
+.feed-photo-cell {
+  overflow: hidden;
+  background: var(--ink-100);
+}
+
+.feed-photo-cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.feed-photo-cell:hover img {
+  transform: scale(1.02);
+}
+
+/* ---------- preserve newlines in captions ---------- */
+.feed-post-text {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}

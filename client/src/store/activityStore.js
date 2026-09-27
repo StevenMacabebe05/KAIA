@@ -14,6 +14,7 @@ const EMPTY = {
   checkins: [],
   volunteerIds: [],
   applications: [],
+  shares: [],
 }
 
 /* =========================================================
@@ -39,9 +40,25 @@ const SEED_NOTIFICATIONS = [
 const SEED_COMMENTS = [
   {
     id: 'sc-1',
+    postId: 'p-call',
+    userId: 'u-fake-1',
+    userName: 'Maria Santos',
+    text: 'Count me in! Will bring 3 friends from our org 💪',
+    createdAt: days(0.1),
+  },
+  {
+    id: 'sc-2',
+    postId: 'p-call',
+    userId: 'u-fake-2',
+    userName: 'Jose Reyes',
+    text: 'Just registered. See you all at Ateneo this afternoon!',
+    createdAt: days(0.2),
+  },
+  {
+    id: 'sc-3',
     postId: 'p-1',
-    userId: 'u-1',
-    userName: 'Demo Supporter',
+    userId: 'u-fake-3',
+    userName: 'Andrea Cruz',
     text: 'So inspiring! Just donated to this campaign.',
     createdAt: days(0.1),
   },
@@ -87,6 +104,14 @@ const SEED_FAKE_SIGNUPS = [
     status: 'registered',
     createdAt: days(1),
   },
+]
+
+const SEED_SHARES = [
+  { id: 'sh-1', postId: 'p-call', userId: 'u-fake-1', sharedAt: days(0.05) },
+  { id: 'sh-2', postId: 'p-call', userId: 'u-fake-2', sharedAt: days(0.08) },
+  { id: 'sh-3', postId: 'p-call', userId: 'u-fake-3', sharedAt: days(0.1) },
+  { id: 'sh-4', postId: 'p-call', userId: 'u-fake-4', sharedAt: days(0.15) },
+  { id: 'sh-5', postId: 'p-call', userId: 'u-fake-5', sharedAt: days(0.2) },
 ]
 
 const SEED_FAKE_APPLICATIONS = [
@@ -146,6 +171,7 @@ function buildInitialState() {
     applications: [...SEED_APPLICATIONS, ...SEED_FAKE_APPLICATIONS],
     notifications: [...SEED_NOTIFICATIONS],
     comments: [...SEED_COMMENTS],
+    shares: [...SEED_SHARES],
   }
 }
 
@@ -548,4 +574,18 @@ export const activityStore = {
   },
   getCommentCount: (postId) =>
     state.comments.filter((c) => c.postId === postId).length,
+
+  /* shares */
+  sharePost: (userId, postId) => {
+    state.shares.push({
+      id: `sh-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      postId,
+      userId,
+      sharedAt: new Date().toISOString(),
+    })
+    save(state)
+  },
+  getShareCount: (postId) =>
+    state.shares.filter((s) => s.postId === postId).length,
+  getShares: (postId) => state.shares.filter((s) => s.postId === postId),
 }
