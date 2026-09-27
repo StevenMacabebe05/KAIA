@@ -16,6 +16,10 @@ const EMPTY = {
   applications: [],
 }
 
+/* =========================================================
+   SEED DATA
+   ========================================================= */
+
 const now = Date.now()
 const days = (n) => new Date(now - n * 24 * 60 * 60 * 1000).toISOString()
 
@@ -29,16 +33,6 @@ const SEED_NOTIFICATIONS = [
     link: '/discover',
     read: false,
     createdAt: days(0.5),
-  },
-  {
-    id: 'seed-n-2',
-    userId: 'u-1',
-    type: 'signup',
-    title: 'Volunteer ID issued',
-    body: 'You are confirmed for "Relief Pack Assembly Day".',
-    link: '/volunteer',
-    read: false,
-    createdAt: days(5),
   },
 ]
 
@@ -59,54 +53,45 @@ const SEED_FOLLOWS = [
   { userId: 'u-1', ngoId: 'ngo-4' },
 ]
 
-const SEED_SIGNUPS = [
+/* ---------------------------------------------------------
+   Demo supporter (u-1) starts with NOTHING volunteer-related
+   so all 4 opportunities show as fresh "View details"
+   --------------------------------------------------------- */
+const SEED_SIGNUPS = []
+const SEED_VOLUNTEER_IDS = []
+const SEED_APPLICATIONS = []
+
+/* ---------------------------------------------------------
+   For the NGO dashboard — separate fake users so the
+   supporter profile stays clean but the NGO sees applicants
+   --------------------------------------------------------- */
+const SEED_FAKE_SIGNUPS = [
   {
-    userId: 'u-1',
+    userId: 'u-fake-1',
     opportunityId: 'vol-1',
-    hours: 2,
-    status: 'registered',
-    createdAt: days(5),
-  },
-  {
-    userId: 'u-1',
-    opportunityId: 'vol-3',
     hours: 0,
-    status: 'cancelled',
-    cancellationReason: 'Schedule conflict',
-    cancelledAt: days(2),
-    createdAt: days(7),
+    status: 'registered',
+    createdAt: days(3),
   },
-]
-
-const SEED_VOLUNTEER_IDS = [
   {
-    id: 'seed-vid-1',
-    code: 'KAIA-VOL-DEMO2026',
-    userId: 'u-1',
+    userId: 'u-fake-2',
+    opportunityId: 'vol-2',
+    hours: 0,
+    status: 'registered',
+    createdAt: days(2),
+  },
+  {
+    userId: 'u-fake-3',
     opportunityId: 'vol-1',
-    issuedAt: days(5),
-    revoked: false,
+    hours: 0,
+    status: 'registered',
+    createdAt: days(1),
   },
 ]
 
-const SEED_APPLICATIONS = [
+const SEED_FAKE_APPLICATIONS = [
   {
     id: 'seed-app-1',
-    userId: 'u-1',
-    opportunityId: 'vol-1',
-    name: 'Demo Supporter',
-    age: 22,
-    email: 'demo@kaia.ph',
-    phone: '+63 917 123 4567',
-    address: 'Quezon City, Metro Manila',
-    emergencyName: 'Maria Dela Cruz',
-    emergencyPhone: '+63 917 765 4321',
-    skills: 'Event coordination',
-    availability: ['Weekend mornings', 'Weekend afternoons'],
-    submittedAt: days(5),
-  },
-  {
-    id: 'seed-app-2',
     userId: 'u-fake-1',
     opportunityId: 'vol-1',
     name: 'Maria Santos',
@@ -121,7 +106,7 @@ const SEED_APPLICATIONS = [
     submittedAt: days(3),
   },
   {
-    id: 'seed-app-3',
+    id: 'seed-app-2',
     userId: 'u-fake-2',
     opportunityId: 'vol-2',
     name: 'Jose Reyes',
@@ -135,15 +120,30 @@ const SEED_APPLICATIONS = [
     availability: ['Weekend mornings', 'Weekend afternoons'],
     submittedAt: days(2),
   },
+  {
+    id: 'seed-app-3',
+    userId: 'u-fake-3',
+    opportunityId: 'vol-1',
+    name: 'Andrea Cruz',
+    age: 22,
+    email: 'andrea.cruz@example.com',
+    phone: '+63 920 456 7890',
+    address: 'Quezon City, Metro Manila',
+    emergencyName: 'Lito Cruz',
+    emergencyPhone: '+63 920 654 3210',
+    skills: 'Event coordination',
+    availability: ['Weekend mornings'],
+    submittedAt: days(1),
+  },
 ]
 
 function buildInitialState() {
   return {
     ...EMPTY,
     follows: [...SEED_FOLLOWS],
-    signups: [...SEED_SIGNUPS],
+    signups: [...SEED_SIGNUPS, ...SEED_FAKE_SIGNUPS],
     volunteerIds: [...SEED_VOLUNTEER_IDS],
-    applications: [...SEED_APPLICATIONS],
+    applications: [...SEED_APPLICATIONS, ...SEED_FAKE_APPLICATIONS],
     notifications: [...SEED_NOTIFICATIONS],
     comments: [...SEED_COMMENTS],
   }
@@ -361,21 +361,17 @@ export const activityStore = {
     state.applications.find(
       (a) => a.userId === userId && a.opportunityId === opportunityId
     ),
-
   getApplicationsForOpportunity: (opportunityId) =>
     state.applications.filter((a) => a.opportunityId === opportunityId),
-
   getApplicationsForNgo: (opportunityIds) => {
     return state.applications
       .filter((a) => opportunityIds.includes(a.opportunityId))
       .map((a) => {
         const signup = state.signups.find(
-          (s) =>
-            s.userId === a.userId && s.opportunityId === a.opportunityId
+          (s) => s.userId === a.userId && s.opportunityId === a.opportunityId
         )
         const checkin = state.checkins.find(
-          (c) =>
-            c.userId === a.userId && c.opportunityId === a.opportunityId
+          (c) => c.userId === a.userId && c.opportunityId === a.opportunityId
         )
         return {
           ...a,
@@ -399,9 +395,7 @@ export const activityStore = {
   getVolunteerIdByCode: (code) =>
     state.volunteerIds.find((v) => v.code === code && !v.revoked),
   getVolunteerIds: (userId) =>
-    state.volunteerIds.filter(
-      (v) => v.userId === userId && !v.revoked
-    ),
+    state.volunteerIds.filter((v) => v.userId === userId && !v.revoked),
 
   /* check-ins */
   checkIn: (code, scannerNgoId) => {
@@ -409,7 +403,6 @@ export const activityStore = {
       (v) => v.code === code && !v.revoked
     )
     if (!volunteerId) return { ok: false, reason: 'not_found' }
-
     const already = state.checkins.find(
       (c) => c.volunteerIdId === volunteerId.id
     )

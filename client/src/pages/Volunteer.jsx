@@ -39,8 +39,10 @@ export default function Volunteer() {
     return s === 'registered' || s === 'attended' || s === 'completed'
   }
 
+  const isCancelled = (opportunityId) =>
+    getSignupStatus(opportunityId) === 'cancelled'
+
   const filtered = all.filter((o) => {
-    if (getSignupStatus(o.id) === 'cancelled') return false
     if (tab === 'nearby') return o.location === 'Quezon City'
     if (tab === 'this-week') {
       const d = new Date(o.date)
@@ -111,7 +113,7 @@ export default function Volunteer() {
         body: `You cancelled "${opp.title}". Reason: ${reason}`,
         link: '/volunteer',
       })
-      toast.push('Signup cancelled — the NGO has been notified.', 'info')
+      toast.push('Signup cancelled. You can re-apply anytime.', 'info')
     }
     setCancelling(null)
   }
@@ -155,6 +157,7 @@ export default function Volunteer() {
           {filtered.map((o) => {
             const ngo = getNgo(o.ngoId)
             const signed = isSignedUp(o.id)
+            const cancelled = isCancelled(o.id)
             const window = getCancellationWindow(o.date)
 
             return (
@@ -167,6 +170,12 @@ export default function Volunteer() {
                 <img
                   src={o.image}
                   alt=""
+                  onError={(e) => {
+                    e.target.onerror = null
+                    e.target.src = `https://placehold.co/800x400/eff4ff/1e40d8?text=${encodeURIComponent(
+                      o.title
+                    )}`
+                  }}
                   style={{
                     width: '100%',
                     height: 160,
@@ -220,6 +229,15 @@ export default function Volunteer() {
                   {o.description}
                 </p>
 
+                {cancelled && (
+                  <div className="previous-cancel-note">
+                    <Icon name="x" size={12} color="var(--red-600)" />
+                    <span>
+                      You cancelled this signup. Re-apply below to join again.
+                    </span>
+                  </div>
+                )}
+
                 <div
                   className="row-between"
                   onClick={(e) => e.stopPropagation()}
@@ -255,6 +273,15 @@ export default function Volunteer() {
                         Cancel
                       </button>
                     </div>
+                  ) : cancelled ? (
+                    <button
+                      type="button"
+                      className="btn btn-accent"
+                      onClick={() => openDetail(o)}
+                    >
+                      Re-apply
+                      <Icon name="arrow-right" size={14} />
+                    </button>
                   ) : (
                     <button
                       type="button"
