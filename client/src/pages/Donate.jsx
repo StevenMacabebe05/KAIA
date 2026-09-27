@@ -1,28 +1,145 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CAMPAIGNS } from '../data/campaigns'
 import { NGOS } from '../data/ngos'
 import { useActivity } from '../store/useActivity'
+import { useToast } from '../components/Toast'
 import StatusTag from '../components/StatusTag'
 import ProgressBar from '../components/ProgressBar'
 import SavedButton from '../components/SavedButton'
 import Icon from '../components/Icon'
 
+const CATEGORY_OPTIONS = [
+  'All categories',
+  'Education',
+  'Children & Youth',
+  'Environment',
+  'Animal Welfare',
+  'Health',
+  'Disaster Relief',
+  'Community Development',
+]
+
+const SORT_OPTIONS = [
+  { key: 'featured', label: 'Featured' },
+  { key: 'urgent', label: 'Most Urgent' },
+  { key: 'funded', label: 'Most Funded' },
+  { key: 'ending', label: 'Ending Soon' },
+  { key: 'newest', label: 'Newest' },
+  { key: 'supporters', label: 'Most Supporters' },
+]
+
+const STATUS_OPTIONS = [
+  { key: 'all', label: 'All' },
+  { key: 'urgent', label: 'Urgent' },
+  { key: 'active', label: 'Active' },
+  { key: 'almost_complete', label: 'Almost Complete' },
+]
+
+const STATUS_PRIORITY = {
+  urgent: 0,
+  almost_complete: 1,
+  active: 2,
+  completed: 3,
+}
+
 export default function Donate() {
   const store = useActivity()
-  const [filter, setFilter] = useState('all')
+  const toast = useToast()
 
-  const all = [...CAMPAIGNS, ...store.getExtraCampaigns()]
-  const filtered = all.filter((c) => {
-    if (filter === 'all') return true
-    if (filter === 'urgent') return c.status === 'urgent'
-    if (filter === 'active') return c.status === 'active'
-    return true
-  })
+  const [search, setSearch] = useState('')
+  const [category, setCategory] = useState('All categories')
+  const [status, setStatus] = useState('all')
+  const [sort, setSort] = useState('featured')
+  const [view, setView] = useState('grid')
+  const [sortOpen, setSortOpen] = useState(false)
+  const [visibleCount, setVisibleCount] = useState(6)
+
   const getNgo = (id) => NGOS.find((n) => n.id === id)
+
+  const extraVersion = store.getExtraCampaigns().length
+
+  /* ---------- urgent spotlight ---------- */
+  const urgentSpotlight = useMemo(() => {
+    const allCampaigns = [...CAMPAIGNS, ...store.getExtraCampaigns()]
+    const urgents = allCampaigns
+      .filter((c) => c.status === 'urgent')
+      .sort((a, b) => a.daysLeft - b.daysLeft)
+    return urgents[0] || null
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [extraVersion])
+
+  /* ---------- filtered + sorted ---------- */
+  const filtered = useMemo(() => {
+    const allCampaigns = [...CAMPAIGNS, ...store.getExtraCampaigns()]
+    let list = [...allCampaigns]
+
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      list = list.filter((c) => {
+        const ngo = getNgo(c.ngoId)
+        return (
+          c.title.toLowerCase().includes(q) ||
+          c.category.toLowerCase().includes(q) ||
+          (ngo && ngo.name.toLowerCase().includes(q))
+        )
+      })
+    }
+
+    if (category !== 'All categories') {
+      list = list.filter((c) => c.category === category)
+    }
+
+    if (status !== 'all') {
+      list = list.filter((c) => c.status === status)
+    }
+
+    const sorters = {
+      featured: (a, b) => {
+        const pa = STATUS_PRIORITY[a.status] ?? 99
+        const pb = STATUS_PRIORITY[b.status] ?? 99
+        if (pa !== pb) return pa - pb
+        return a.daysLeft - b.daysLeft
+      },
+      urgent: (a, b) => a.daysLeft - b.daysLeft,
+      funded: (a, b) => b.raised - a.raised,
+      ending: (a, b) => a.daysLeft - b.daysLeft,
+      newest: (a, b) => {
+        const da = new Date(a.createdAt || 0).getTime()
+        const db = new Date(b.createdAt || 0).getTime()
+        return db - da
+      },
+      supporters: (a, b) => b.donorCount - a.donorCount,
+    }
+
+    return list.sort(sorters[sort] || sorters.featured)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, category, status, sort, extraVersion])
+
+  const visible = filtered.slice(0, visibleCount)
+  const hasMore = filtered.length > visibleCount
+
+  /* ---------- share ---------- */
+  function handleShare(campaign, e) {
+    e.preventDefault()
+    e.stopPropagation()
+    const url = `${window.location.origin}/campaign/${campaign.id}`
+    if (navigator.share) {
+      navigator
+        .share({ title: campaign.title, url })
+        .catch(() => {})
+    } else {
+      navigator.clipboard.writeText(url)
+      toast.push('Link copied to clipboard', 'success', 1800)
+    }
+  }
+
+  const activeSortLabel =
+    SORT_OPTIONS.find((o) => o.key === sort)?.label || 'Featured'
 
   return (
     <div className="container">
+      {/* ---------- PAGE HEADER ---------- */}
       <div className="page-header">
         <h1 className="page-title">Donation campaigns</h1>
         <p className="page-subtitle">
@@ -30,98 +147,277 @@ export default function Donate() {
         </p>
       </div>
 
-      <div className="filters">
-        {[
-          { key: 'all', label: 'All causes' },
-          { key: 'urgent', label: 'Urgent' },
-          { key: 'active', label: 'Active' },
-        ].map((f) => (
+      {/* ---------- URGENT SPOTLIGHT ---------- */}
+      {urgentSpotlight && (
+        <Link
+          to={`/campaign/${urgentSpotlight.id}`}
+          className="urgent-spotlight"
+        >
+          <div className="urgent-spotlight-image">
+            <img src={urgentSpotlight.image} alt="" />
+            <span className="urgent-spotlight-badge">
+              <Icon name="bell" size={12} />
+              Urgent
+            </span>
+          </div>
+          <div className="urgent-spotlight-body">
+            <div className="urgent-spotlight-eyebrow">
+              Most urgent right now
+            </div>
+            <h3 className="urgent-spotlight-title">
+              {urgentSpotlight.title}
+            </h3>
+            <p className="urgent-spotlight-desc">
+              {urgentSpotlight.description}
+            </p>
+            <div className="urgent-spotlight-progress">
+              <ProgressBar
+                value={urgentSpotlight.raised}
+                goal={urgentSpotlight.goal}
+              />
+            </div>
+            <div className="urgent-spotlight-footer">
+              <span className="urgent-spotlight-meta">
+                <Icon name="calendar" size={13} />
+                {urgentSpotlight.daysLeft} days left
+              </span>
+              <span className="urgent-spotlight-cta">
+                Donate now <Icon name="arrow-right" size={14} />
+              </span>
+            </div>
+          </div>
+        </Link>
+      )}
+
+      {/* ---------- TOOLBAR ---------- */}
+      <div className="donate-toolbar">
+        <div className="search">
+          <span className="search-icon">
+            <Icon name="search" size={16} />
+          </span>
+          <input
+            placeholder="Search campaigns or NGOs…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
+        <div className="sort-dropdown">
           <button
-            key={f.key}
-            className={`pill ${filter === f.key ? 'is-active' : ''}`}
-            onClick={() => setFilter(f.key)}
+            className="sort-trigger"
+            onClick={() => setSortOpen((o) => !o)}
+            type="button"
           >
-            {f.label}
+            <span className="sort-label">Sort:</span>
+            <span className="sort-value">{activeSortLabel}</span>
+            <Icon name="chevron-down" size={14} />
+          </button>
+
+          {sortOpen && (
+            <>
+              <div
+                className="sort-backdrop"
+                onClick={() => setSortOpen(false)}
+              />
+              <div className="sort-menu">
+                {SORT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.key}
+                    className={`sort-option ${
+                      sort === opt.key ? 'active' : ''
+                    }`}
+                    onClick={() => {
+                      setSort(opt.key)
+                      setSortOpen(false)
+                    }}
+                    type="button"
+                  >
+                    {opt.label}
+                    {sort === opt.key && (
+                      <Icon
+                        name="check"
+                        size={14}
+                        color="var(--blue-700)"
+                      />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="view-toggle">
+          <button
+            className={`view-btn ${view === 'grid' ? 'active' : ''}`}
+            onClick={() => setView('grid')}
+            title="Grid view"
+            type="button"
+          >
+            <Icon name="grid" size={16} />
+          </button>
+          <button
+            className={`view-btn ${view === 'list' ? 'active' : ''}`}
+            onClick={() => setView('list')}
+            title="List view"
+            type="button"
+          >
+            <Icon name="list" size={16} />
+          </button>
+        </div>
+      </div>
+
+      {/* ---------- CATEGORY PILLS ---------- */}
+      <div className="filters">
+        {CATEGORY_OPTIONS.map((c) => (
+          <button
+            key={c}
+            className={`pill ${category === c ? 'is-active' : ''}`}
+            onClick={() => setCategory(c)}
+            type="button"
+          >
+            {c}
           </button>
         ))}
       </div>
 
-      <div className="grid grid-3">
-        {filtered.map((c) => {
-          const ngo = getNgo(c.ngoId)
-          return (
-            <div
-              key={c.id}
-              className="card card-hover"
-              style={{ padding: 0, overflow: 'hidden' }}
-            >
-              <Link
-                to={`/campaign/${c.id}`}
-                style={{ color: 'inherit', display: 'block' }}
-              >
-                <img
-                  src={c.image}
-                  alt=""
-                  style={{ width: '100%', height: 160, objectFit: 'cover' }}
-                />
-                <div style={{ padding: 18 }}>
-                  <div
-                    className="row-between"
-                    style={{
-                      marginBottom: 6,
-                      alignItems: 'flex-start',
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontWeight: 700,
-                        fontSize: 15,
-                        flex: 1,
-                        lineHeight: 1.35,
-                      }}
-                    >
-                      {c.title}
-                    </div>
-                    <StatusTag status={c.status} />
-                  </div>
-                  <div
-                    className="text-muted"
-                    style={{ fontSize: 12, marginBottom: 14 }}
-                  >
-                    by {ngo?.name}
-                  </div>
-                  <ProgressBar value={c.raised} goal={c.goal} />
-                  <div
-                    className="row-between"
-                    style={{
-                      marginTop: 14,
-                      fontSize: 12,
-                      color: 'var(--ink-500)',
-                    }}
-                  >
-                    <span className="row" style={{ gap: 5 }}>
-                      <Icon name="users" size={13} /> {c.donorCount} supporters
-                    </span>
-                    <span className="row" style={{ gap: 5 }}>
-                      <Icon name="calendar" size={13} /> {c.daysLeft} days left
-                    </span>
-                  </div>
-                </div>
-              </Link>
-
-              <div
-                style={{
-                  padding: '0 18px 18px',
-                  display: 'flex',
-                  justifyContent: 'flex-end',
-                }}
-              >
-                <SavedButton campaignId={c.id} />
-              </div>
-            </div>
-          )
-        })}
+      {/* ---------- STATUS PILLS ---------- */}
+      <div className="filters">
+        {STATUS_OPTIONS.map((s) => (
+          <button
+            key={s.key}
+            className={`pill ${status === s.key ? 'is-active' : ''}`}
+            onClick={() => setStatus(s.key)}
+            type="button"
+          >
+            {s.label}
+          </button>
+        ))}
       </div>
+
+      {/* ---------- RESULTS COUNT ---------- */}
+      <div className="donate-results">
+        <span>
+          {filtered.length}{' '}
+          {filtered.length === 1 ? 'campaign' : 'campaigns'} found
+        </span>
+        {(search || category !== 'All categories' || status !== 'all') && (
+          <button
+            className="donate-clear"
+            onClick={() => {
+              setSearch('')
+              setCategory('All categories')
+              setStatus('all')
+            }}
+            type="button"
+          >
+            Clear filters
+          </button>
+        )}
+      </div>
+
+      {/* ---------- CAMPAIGN GRID / LIST ---------- */}
+      {filtered.length === 0 ? (
+        <div className="empty">
+          <div className="empty-icon">
+            <Icon name="search" size={40} strokeWidth={1.5} />
+          </div>
+          <div className="empty-title">No campaigns match</div>
+          <div>Try a different search or filter.</div>
+        </div>
+      ) : (
+        <div
+          className={view === 'grid' ? 'grid grid-3' : 'donate-list'}
+        >
+          {visible.map((c) => {
+            const ngo = getNgo(c.ngoId)
+            return (
+              <div
+                key={c.id}
+                className={`campaign-card ${
+                  view === 'list' ? 'campaign-card-list' : ''
+                }`}
+              >
+                <Link
+                  to={`/campaign/${c.id}`}
+                  className="campaign-card-link"
+                >
+                  <div className="campaign-card-media">
+                    <img
+                      src={c.image}
+                      alt=""
+                      onError={(e) => {
+                        e.target.src = `https://placehold.co/800x400/eff4ff/1e40d8?text=${encodeURIComponent(
+                          c.title
+                        )}`
+                      }}
+                    />
+                    <div className="campaign-card-badges">
+                      <StatusTag status={c.status} />
+                    </div>
+                    <div className="campaign-card-hover-actions">
+                      <button
+                        type="button"
+                        className="campaign-hover-btn"
+                        onClick={(e) => handleShare(c, e)}
+                        title="Share"
+                      >
+                        <Icon name="share" size={14} color="white" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="campaign-card-body">
+                    <div className="campaign-card-title">{c.title}</div>
+                    <div className="campaign-card-ngo">
+                      {ngo?.name}
+                    </div>
+
+                    <div className="campaign-card-progress">
+                      <ProgressBar value={c.raised} goal={c.goal} />
+                    </div>
+
+                    <div className="campaign-card-stats">
+                      <span className="row" style={{ gap: 5 }}>
+                        <Icon name="users" size={13} />
+                        {c.donorCount}
+                      </span>
+                      <span className="row" style={{ gap: 5 }}>
+                        <Icon name="calendar" size={13} />
+                        {c.daysLeft}d left
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+
+                <div className="campaign-card-actions">
+                  <SavedButton campaignId={c.id} />
+                  <Link
+                    to={`/campaign/${c.id}`}
+                    className="btn btn-accent btn-sm campaign-donate-btn"
+                  >
+                    <Icon name="heart" size={13} /> Donate
+                  </Link>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* ---------- LOAD MORE ---------- */}
+      {hasMore && (
+        <div className="donate-load-more">
+          <button
+            className="btn btn-ghost btn-lg"
+            onClick={() => setVisibleCount((n) => n + 6)}
+            type="button"
+          >
+            Load more campaigns
+            <Icon name="chevron-down" size={16} />
+          </button>
+        </div>
+      )}
     </div>
   )
 }
