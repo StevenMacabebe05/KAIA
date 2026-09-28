@@ -8,9 +8,9 @@ import { useActivity } from '../store/useActivity'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../components/Toast'
 import EmptyState from '../components/EmptyState'
-import VerifiedBadge from '../components/VerifiedBadge'
 import HeroCarousel from '../components/HeroCarousel'
 import Testimonials from '../components/Testimonials'
+import FeedPost from '../components/FeedPost'
 import Icon from '../components/Icon'
 
 const HERO_SLIDES = [
@@ -21,46 +21,26 @@ const HERO_SLIDES = [
   { image: '/images/hero/hero-5.jpg' },
 ]
 
-const POST_TYPE_LABELS = {
-  update: 'Update',
-  announcement: 'Announcement',
-  campaign: 'Campaign',
-}
-
-function timeAgo(iso) {
-  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
-  if (s < 60) return 'just now'
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`
-  if (s < 604800) return `${Math.floor(s / 86400)}d ago`
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  })
-}
-
 export default function Home() {
   const { user } = useAuth()
   const store = useActivity()
   const toast = useToast()
 
   const [feedTab, setFeedTab] = useState('all')
-  const [activeCommentPost, setActiveCommentPost] = useState(null)
-  const [commentText, setCommentText] = useState('')
 
-  const [likedPosts, setLikedPosts] = useState(() => {
+  /* ---------- simple likes map for trending scoring ---------- */
+  const likedPosts = (() => {
     try {
       return JSON.parse(localStorage.getItem('kaia_likes') || '{}')
     } catch {
       return {}
     }
-  })
+  })()
 
   const followedIds = user ? store.getFollowedNgoIds(user.id) : []
 
   const allPosts = [...POSTS, ...store.getExtraPosts()]
 
-  /* feed tab filtering */
   const feedPosts = (() => {
     if (feedTab === 'following') {
       return allPosts
@@ -85,7 +65,6 @@ export default function Home() {
         .map((x) => x.post)
     }
 
-    /* all — show everything */
     return [...allPosts].sort((a, b) => {
       if (a.pinned && !b.pinned) return -1
       if (!a.pinned && b.pinned) return 1
@@ -106,95 +85,6 @@ export default function Home() {
     .slice(0, 3)
 
   const getNgo = (id) => NGOS.find((n) => n.id === id)
-
-  function toggleLike(postId) {
-    setLikedPosts((prev) => {
-      const next = { ...prev, [postId]: !prev[postId] }
-      try {
-        localStorage.setItem('kaia_likes', JSON.stringify(next))
-      } catch {
-        /* ignore */
-      }
-      return next
-    })
-  }
-
-  function handleShare(post) {
-    if (user) store.sharePost(user.id, post.id)
-    const ngo = getNgo(post.ngoId)
-    const url = `${window.location.origin}/ngo/${ngo?.id || ''}`
-    if (navigator.share) {
-      navigator
-        .share({ title: 'Check this out on KAIA', url })
-        .catch(() => {})
-    } else {
-      navigator.clipboard.writeText(url)
-      toast.push('Link copied to clipboard', 'success', 1800)
-    }
-  }
-
-  function openCommentBox(postId) {
-    if (!user) {
-      toast.push('Log in to comment', 'info')
-      return
-    }
-    setActiveCommentPost(postId)
-    setCommentText('')
-  }
-
-  function submitComment(postId) {
-    if (!commentText.trim()) return
-    store.addComment(postId, user.id, user.name, commentText)
-    setCommentText('')
-    setActiveCommentPost(null)
-    toast.push('Comment posted', 'success', 1500)
-  }
-
-  function renderImages(post) {
-    const images =
-      post.images && post.images.length > 0
-        ? post.images
-        : post.image
-        ? [post.image]
-        : []
-
-    if (images.length === 0) return null
-
-    if (images.length === 1) {
-      return (
-        <div className="feed-post-photo single">
-          <img
-            src={images[0]}
-            alt=""
-            onError={(e) => {
-              e.target.parentElement.style.display = 'none'
-            }}
-          />
-        </div>
-      )
-    }
-
-    return (
-      <div
-        className={`feed-post-photo gallery count-${Math.min(
-          images.length,
-          4
-        )}`}
-      >
-        {images.slice(0, 4).map((src, i) => (
-          <div key={i} className="feed-photo-cell">
-            <img
-              src={src}
-              alt=""
-              onError={(e) => {
-                e.target.parentElement.style.display = 'none'
-              }}
-            />
-          </div>
-        ))}
-      </div>
-    )
-  }
 
   return (
     <div className="container">
@@ -243,6 +133,7 @@ export default function Home() {
                   feedTab === t.key ? 'active' : ''
                 }`}
                 onClick={() => setFeedTab(t.key)}
+                type="button"
               >
                 <Icon name={t.icon} size={14} />
                 {t.label}
@@ -263,17 +154,26 @@ export default function Home() {
                   ? 'Follow NGOs to see their updates here.'
                   : 'Check back soon for new updates.'
               }
-              action={
-                feedTab === 'following' ? (
-                  <Link
-                    to="/discover"
-                    style={{ marginTop: 16, display: 'inline-block' }}
-                  >
-                    <button className="btn btn-primary">
-                      Discover NGOs
-                    </button>
-                  </Link>
-                ) : null
+              suggestions={
+                feedTab === 'following'
+                  ? [
+                      {
+                        label: 'Discover NGOs',
+                        to: '/discover',
+                        icon: 'globe',
+                      },
+                      {
+                        label: 'Browse campaigns',
+                        to: '/donate',
+                        icon: 'heart',
+                      },
+                      {
+                        label: 'Find volunteer work',
+                        to: '/volunteer',
+                        icon: 'hand',
+                      },
+                    ]
+                  : undefined
               }
             />
           ) : (
@@ -281,160 +181,13 @@ export default function Home() {
               {feedPosts.map((post) => {
                 const ngo = getNgo(post.ngoId)
                 if (!ngo) return null
-
-                const liked = !!likedPosts[post.id]
-                const comments = store.getComments(post.id)
-                const commentCount = comments.length
-                const shareCount = store.getShareCount(post.id)
-                const typeLabel =
-                  POST_TYPE_LABELS[post.type] || 'Update'
-                const previewComments = comments.slice(-2)
-                const isCommenting = activeCommentPost === post.id
-
                 return (
-                  <article key={post.id} className="feed-post">
-                    {/* header */}
-                    <header className="feed-post-header">
-                      <img
-                        src={ngo.logo}
-                        alt=""
-                        className="feed-post-avatar"
-                      />
-                      <div className="feed-post-meta">
-                        <Link
-                          to={`/ngo/${ngo.id}`}
-                          className="feed-post-ngo"
-                        >
-                          {ngo.name}
-                        </Link>
-                        <div className="feed-post-subtitle">
-                          <span className="feed-post-type">
-                            {typeLabel}
-                          </span>
-                          <span className="feed-post-dot">·</span>
-                          <span>{timeAgo(post.createdAt)}</span>
-                        </div>
-                      </div>
-                      <VerifiedBadge verified={ngo.verified} />
-                    </header>
-
-                    {/* caption */}
-                    <p className="feed-post-text">{post.content}</p>
-
-                    {/* images */}
-                    {renderImages(post)}
-
-                    {/* action row */}
-                    <footer className="feed-post-actions">
-                      <button
-                        type="button"
-                        className={`feed-action ${
-                          liked ? 'is-liked' : ''
-                        }`}
-                        onClick={() => toggleLike(post.id)}
-                      >
-                        <Icon
-                          name="heart"
-                          size={16}
-                          color={
-                            liked ? 'var(--red-600)' : 'currentColor'
-                          }
-                        />
-                        <span>{liked ? 'Liked' : 'Like'}</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        className="feed-action"
-                        onClick={() => openCommentBox(post.id)}
-                      >
-                        <Icon name="message-circle" size={16} />
-                        <span>
-                          Comment
-                          {commentCount > 0 && ` · ${commentCount}`}
-                        </span>
-                      </button>
-
-                      <button
-                        type="button"
-                        className="feed-action"
-                        onClick={() => handleShare(post)}
-                      >
-                        <Icon name="share" size={16} />
-                        <span>
-                          Share
-                          {shareCount > 0 && ` · ${shareCount}`}
-                        </span>
-                      </button>
-
-                      <Link
-                        to="/donate"
-                        className="feed-action feed-action-donate"
-                      >
-                        <Icon name="heart" size={16} />
-                        <span>Donate</span>
-                      </Link>
-                    </footer>
-
-                    {/* comment previews */}
-                    {previewComments.length > 0 && (
-                      <div className="feed-comment-preview">
-                        {previewComments.map((c) => (
-                          <div key={c.id} className="feed-comment">
-                            <div className="feed-comment-avatar">
-                              {c.userName.charAt(0).toUpperCase()}
-                            </div>
-                            <div className="feed-comment-bubble">
-                              <div className="feed-comment-name">
-                                {c.userName}
-                              </div>
-                              <div className="feed-comment-text">
-                                {c.text}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                        {commentCount > 2 && (
-                          <Link
-                            to={`/ngo/${ngo.id}`}
-                            className="feed-view-comments"
-                          >
-                            View all {commentCount} comments
-                          </Link>
-                        )}
-                      </div>
-                    )}
-
-                    {/* inline comment input */}
-                    {isCommenting && (
-                      <div className="feed-comment-input-wrap">
-                        <div className="feed-comment-avatar">
-                          {user?.name?.charAt(0).toUpperCase() || 'A'}
-                        </div>
-                        <input
-                          className="feed-comment-input"
-                          placeholder="Write a comment…"
-                          value={commentText}
-                          onChange={(e) => setCommentText(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') submitComment(post.id)
-                            if (e.key === 'Escape') {
-                              setActiveCommentPost(null)
-                              setCommentText('')
-                            }
-                          }}
-                          autoFocus
-                        />
-                        <button
-                          className="btn btn-primary btn-sm"
-                          disabled={!commentText.trim()}
-                          onClick={() => submitComment(post.id)}
-                        >
-                          Post
-                        </button>
-                      </div>
-                    )}
-                  </article>
+                  <FeedPost
+                    key={post.id}
+                    post={post}
+                    ngo={ngo}
+                    showNgoHeader={true}
+                  />
                 )
               })}
             </div>
@@ -491,6 +244,7 @@ export default function Home() {
                         })
                         toast.push(`Following ${ngo.name}`, 'success')
                       }}
+                      type="button"
                     >
                       Follow
                     </button>

@@ -10,8 +10,8 @@ import VerifiedBadge from '../components/VerifiedBadge'
 import StatusTag from '../components/StatusTag'
 import ProgressBar from '../components/ProgressBar'
 import EmptyState from '../components/EmptyState'
-import CommentSection from '../components/CommentSection'
 import MessageModal from '../components/MessageModal'
+import FeedPost from '../components/FeedPost'
 import ImpactTab from '../components/ImpactTab'
 import FinancialReport from '../components/FinancialReport'
 import Icon from '../components/Icon'
@@ -202,31 +202,14 @@ export default function NGODetail() {
             message="This NGO hasn't posted anything."
           />
         ) : (
-          <div className="grid" style={{ gap: 20 }}>
+          <div className="home-feed-list">
             {posts.map((p) => (
-              <div className="card" key={p.id}>
-                <p
-                  style={{
-                    margin: '0 0 12px',
-                    fontSize: 15,
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {p.content}
-                </p>
-                {p.image && (
-                  <img
-                    src={p.image}
-                    alt=""
-                    style={{
-                      width: '100%',
-                      borderRadius: 10,
-                      marginBottom: 12,
-                    }}
-                  />
-                )}
-                <CommentSection postId={p.id} />
-              </div>
+              <FeedPost
+                key={p.id}
+                post={p}
+                ngo={ngo}
+                showNgoHeader={true}
+              />
             ))}
           </div>
         ))}

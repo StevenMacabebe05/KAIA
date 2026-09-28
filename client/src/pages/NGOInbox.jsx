@@ -24,11 +24,12 @@ export default function NGOInbox() {
   const scrollRef = useRef(null)
 
   const ngoId = user?.ngoId
+  const messages = store.getState().messages || []
 
   const conversations = useMemo(
     () => (ngoId ? store.getNgoConversations(ngoId) : []),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [ngoId, store.getState().messages.length]
+    [ngoId, messages.length]
   )
 
   const filtered = useMemo(() => {
@@ -45,20 +46,21 @@ export default function NGOInbox() {
     ? conversations.find((c) => c.userId === selectedUserId)
     : null
 
+  /* auto-scroll thread when message count changes */
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
   }, [active?.messages.length])
 
-  useEffect(() => {
-    if (active && active.unreadCount > 0) {
-      store.markConversationRead(active.userId, ngoId)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedUserId])
-
   if (!user || !ngoId) return null
+
+  function openConversation(conv) {
+    setSelectedUserId(conv.userId)
+    if (conv.unreadCount > 0) {
+      store.markConversationRead(conv.userId, ngoId)
+    }
+  }
 
   function sendReply() {
     if (!reply.trim() || !active) return
@@ -111,7 +113,7 @@ export default function NGOInbox() {
                     className={`inbox-item ${
                       selectedUserId === c.userId ? 'active' : ''
                     } ${c.unreadCount > 0 ? 'unread' : ''}`}
-                    onClick={() => setSelectedUserId(c.userId)}
+                    onClick={() => openConversation(c)}
                     type="button"
                   >
                     <div className="inbox-item-avatar">
