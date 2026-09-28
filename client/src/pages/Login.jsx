@@ -5,6 +5,13 @@ import { useToast } from '../components/Toast'
 import { DEMO_HINTS } from '../data/users'
 import Icon from '../components/Icon'
 
+const HERO_PHOTOS = [
+  '/images/auth/auth-1.jpg',
+  '/images/auth/auth-2.jpg',
+  '/images/auth/auth-3.jpg',
+  '/images/auth/auth-4.jpg',
+]
+
 const QUOTES = [
   { text: 'KAIA natin \u2018to lahat.', sub: 'This is ours, together.' },
   { text: 'Kaya mo. Kaya natin.', sub: 'You can. We can.' },
@@ -51,12 +58,20 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [quoteIndex, setQuoteIndex] = useState(0)
+  const [photoIndex, setPhotoIndex] = useState(0)
   const [connecting, setConnecting] = useState(null)
 
   useEffect(() => {
     const t = setInterval(() => {
       setQuoteIndex((i) => (i + 1) % QUOTES.length)
     }, 4200)
+    return () => clearInterval(t)
+  }, [])
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setPhotoIndex((i) => (i + 1) % HERO_PHOTOS.length)
+    }, 6000)
     return () => clearInterval(t)
   }, [])
 
@@ -109,27 +124,28 @@ export default function Login() {
   return (
     <div className="auth-page">
       <div className="auth-card-floating">
-        {/* LEFT — animated gradient hero */}
+        {/* LEFT — animated gradient hero with photo carousel */}
         <aside className="auth-hero">
+          {/* photo carousel — sits behind the gradient */}
+          <div className="auth-hero-photos" aria-hidden="true">
+            {HERO_PHOTOS.map((src, i) => (
+              <div
+                key={i}
+                className={`auth-hero-photo ${
+                  i === photoIndex ? 'active' : ''
+                }`}
+                style={{ backgroundImage: `url(${src})` }}
+              />
+            ))}
+          </div>
+
+          {/* decorative blobs */}
           <div className="auth-hero-blob auth-hero-blob-1" />
           <div className="auth-hero-blob auth-hero-blob-2" />
           <div className="auth-hero-blob auth-hero-blob-3" />
 
+          {/* quote */}
           <div className="auth-hero-content">
-            <div className="auth-hero-mark">
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="white"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-              >
-                <path d="M12 2v20M4.9 4.9l14.2 14.2M19.1 4.9L4.9 19.1" />
-              </svg>
-            </div>
-
             <div className="auth-hero-quote-wrap">
               <div key={quoteIndex} className="auth-hero-quote">
                 <div className="auth-hero-quote-text">

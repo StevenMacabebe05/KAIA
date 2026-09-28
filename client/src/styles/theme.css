@@ -6826,7 +6826,7 @@ body,
   height: 100%;
   max-height: 820px;
   display: grid;
-  grid-template-columns: minmax(440px, 50%) 1fr;
+  grid-template-columns: minmax(440px, 60%) 1fr;
   border-radius: 28px;
   overflow: hidden;
   background: var(--white);
@@ -6849,16 +6849,7 @@ body,
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background: linear-gradient(
-    145deg,
-    #1e40d8 0%,
-    #12277a 35%,
-    #1e3a8a 60%,
-    #f97316 95%,
-    #1e40d8 100%
-  );
-  background-size: 280% 280%;
-  animation: auth-gradient-flow 24s ease-in-out infinite;
+  background: #0f1d5c; /* fallback while photos load */
 }
 
 @keyframes auth-gradient-flow {
@@ -6881,19 +6872,6 @@ body,
   scrollbar-width: none;
 }
 .auth-hero-content::-webkit-scrollbar { display: none; }
-
-/* asterisk mark */
-.auth-hero-mark {
-  width: 48px;
-  height: 48px;
-  display: grid;
-  place-items: center;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  flex-shrink: 0;
-}
 
 /* quote */
 .auth-hero-quote-wrap {
@@ -7287,4 +7265,56 @@ body,
   .auth-panel {
     padding: 32px 28px;
   }
+}
+
+/* =========================================================
+   LOGIN — PHOTO CAROUSEL BEHIND THE GRADIENT
+   ========================================================= */
+
+.auth-hero-photos {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.auth-hero-photo {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transform: scale(1.08);
+  transition: opacity 1.6s ease, transform 7s ease;
+}
+
+.auth-hero-photo.active {
+  opacity: 0.70;
+  transform: scale(1);
+}
+
+/* ensure the gradient layer sits above the photos */
+.auth-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    145deg,
+    rgba(30, 64, 216, 0.78) 0%,
+    rgba(18, 39, 122, 0.82) 35%,
+    rgba(30, 58, 138, 0.78) 60%,
+    rgba(249, 115, 22, 0.55) 95%,
+    rgba(30, 64, 216, 0.85) 100%
+  );
+  background-size: 280% 280%;
+  animation: auth-gradient-flow 24s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* blobs and content sit above the gradient */
+.auth-hero-blob,
+.auth-hero-content {
+  z-index: 2;
 }
