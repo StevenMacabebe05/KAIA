@@ -7318,3 +7318,79 @@ body,
 .auth-hero-content {
   z-index: 2;
 }
+
+/* =========================================================
+   URGENT SPOTLIGHT — FULL BLUE BACKGROUND
+   ========================================================= */
+
+.urgent-spotlight {
+  background: linear-gradient(
+    135deg,
+    #1e40d8 0%,
+    #12277a 100%
+  ) !important;
+  border: 1px solid var(--blue-900) !important;
+}
+
+/* keep all text readable on the light blue */
+.urgent-spotlight-title { color: #ffffff !important; }
+.urgent-spotlight-desc { color: rgba(255, 255, 255, 0.85) !important; }
+.urgent-spotlight-eyebrow { color: #bfdbfe !important; }
+.urgent-spotlight-meta { color: rgba(255, 255, 255, 0.7) !important; }
+.urgent-spotlight-cta { color: #ffffff !important; }
+
+/* dark mode — deep navy variant */
+[data-theme='dark'] .urgent-spotlight {
+  background: linear-gradient(
+    135deg,
+    #0f1729 0%,
+    #16203a 100%
+  ) !important;
+  border: 1px solid #1e2a45 !important;
+}
+
+[data-theme='dark'] .urgent-spotlight-title {
+  color: #e5edf9 !important;
+}
+
+[data-theme='dark'] .urgent-spotlight-desc {
+  color: #b5c4dd !important;
+}
+
+[data-theme='dark'] .urgent-spotlight-eyebrow {
+  color: #60a5fa !important;
+}
+
+[data-theme='dark'] .urgent-spotlight-meta {
+  color: #7d8dad !important;
+}
+
+[data-theme='dark'] .urgent-spotlight-cta {
+  color: #60a5fa !important;
+}
+
+/* =========================================================
+   URGENT SPOTLIGHT — WHITE PROGRESS AMOUNTS
+   ========================================================= */
+
+.urgent-spotlight .pb-raised {
+  color: #ffffff !important;
+}
+
+.urgent-spotlight .pb-labels .muted {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* make the empty part of the progress bar visible against blue */
+.urgent-spotlight .pb-track {
+  background: rgba(255, 255, 255, 0.22) !important;
+}
+
+/* if using the lighter blue version of the card, darken these instead */
+[data-theme='light'] .urgent-spotlight .pb-raised {
+  color: #ffffff !important;
+}
+
+[data-theme='light'] .urgent-spotlight .pb-labels .muted {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
