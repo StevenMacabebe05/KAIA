@@ -6,6 +6,7 @@ import { POSTS } from '../data/posts'
 import { useActivity } from '../store/useActivity'
 import { useAuth } from '../context/AuthContext'
 import Icon from '../components/Icon'
+import AnimatedCounter from '../components/AnimatedCounter'
 import {
   DonationLineChart,
   CampaignBarChart,
@@ -98,7 +99,8 @@ export default function NGODashboard() {
       <div className="page-header">
         <h1 className="page-title">NGO Dashboard</h1>
         <p className="page-subtitle">
-          Manage campaigns, volunteers, applications, and updates.
+          Manage campaigns, volunteers, and updates. Track performance in real
+          time.
         </p>
       </div>
 
@@ -108,7 +110,7 @@ export default function NGODashboard() {
           <div className="stat-rich-top">
             <div>
               <div className="stat-rich-value">
-                ₱{totalRaised.toLocaleString()}
+                ₱<AnimatedCounter value={totalRaised} />
               </div>
               <div className="stat-rich-label">Total raised</div>
             </div>
@@ -121,25 +123,37 @@ export default function NGODashboard() {
           <div className="stat-rich-top">
             <div>
               <div className="stat-rich-value">
-                {applications.length}
+                <AnimatedCounter value={activeCampaigns} />
               </div>
-              <div className="stat-rich-label">Applications</div>
+              <div className="stat-rich-label">Active campaigns</div>
             </div>
-            <Sparkline
-              data={[0, 1, 2, 3, applications.length]}
-              color="#f97316"
-            />
+            <Sparkline data={[1, 2, 2, 3, 3, 3]} color="#f97316" />
           </div>
-          <div className="stat-rich-delta">
-            {applications.filter((a) => a.status === 'cancelled').length}{' '}
-            cancelled
-          </div>
+          <div className="stat-rich-delta">↑ 1 new this month</div>
         </div>
 
         <div className="stat-card-rich">
           <div className="stat-rich-top">
             <div>
-              <div className="stat-rich-value">{checkins.length}</div>
+              <div className="stat-rich-value">
+                <AnimatedCounter value={2300} />
+              </div>
+              <div className="stat-rich-label">Supporters</div>
+            </div>
+            <Sparkline
+              data={[1800, 1950, 2050, 2100, 2200, 2300]}
+              color="#1e40d8"
+            />
+          </div>
+          <div className="stat-rich-delta">↑ 4.3% this week</div>
+        </div>
+
+        <div className="stat-card-rich">
+          <div className="stat-rich-top">
+            <div>
+              <div className="stat-rich-value">
+                <AnimatedCounter value={checkins.length} />
+              </div>
               <div className="stat-rich-label">Event check-ins</div>
             </div>
             <Sparkline
@@ -147,18 +161,9 @@ export default function NGODashboard() {
               color="#16a34a"
             />
           </div>
-          <div className="stat-rich-delta">↑ this month</div>
-        </div>
-
-        <div className="stat-card-rich">
-          <div className="stat-rich-top">
-            <div>
-              <div className="stat-rich-value">{activeCampaigns}</div>
-              <div className="stat-rich-label">Active campaigns</div>
-            </div>
-            <Sparkline data={[1, 2, 2, 3, 3, 3]} color="#1e40d8" />
+          <div className="stat-rich-delta">
+            {checkins.length > 0 ? '↑ new this month' : 'No check-ins yet'}
           </div>
-          <div className="stat-rich-delta">Live now</div>
         </div>
       </div>
 
@@ -208,6 +213,9 @@ export default function NGODashboard() {
         <h2 className="page-title" style={{ fontSize: 22 }}>
           Quick actions
         </h2>
+        <p className="page-subtitle">
+          Everything you need to run your organization on KAIA.
+        </p>
       </div>
 
       <div className="grid grid-4">
@@ -381,7 +389,8 @@ export default function NGODashboard() {
           items={[
             `Total donated: ₱${totalRaised.toLocaleString()}`,
             `Campaigns: ${campaigns.length}`,
-            `Applications: ${applications.length}`,
+            `Posts: ${posts.length}`,
+            `Volunteer opportunities: ${opportunities.length}`,
             `Event check-ins: ${checkins.length}`,
           ]}
         />
@@ -434,6 +443,7 @@ function ApplicationsModal({ applications, opportunities, onClose }) {
             className="btn btn-neutral btn-sm"
             onClick={onClose}
             style={{ padding: '6px 10px' }}
+            type="button"
           >
             <Icon name="x" size={14} />
           </button>
@@ -450,6 +460,7 @@ function ApplicationsModal({ applications, opportunities, onClose }) {
               key={f.key}
               className={`pill ${filter === f.key ? 'is-active' : ''}`}
               onClick={() => setFilter(f.key)}
+              type="button"
             >
               {f.label}
             </button>
@@ -485,7 +496,10 @@ function ApplicationsModal({ applications, opportunities, onClose }) {
                     </div>
                     <span
                       className="badge"
-                      style={{ background: statusColor.bg, color: statusColor.fg }}
+                      style={{
+                        background: statusColor.bg,
+                        color: statusColor.fg,
+                      }}
                     >
                       {a.status}
                     </span>
@@ -540,7 +554,10 @@ function ApplicationsModal({ applications, opportunities, onClose }) {
                   {a.cancellationReason && (
                     <div className="applicant-cancellation">
                       <strong>Cancelled reason:</strong> {a.cancellationReason}
-                      <div className="text-muted" style={{ marginTop: 2, fontSize: 11 }}>
+                      <div
+                        className="text-muted"
+                        style={{ marginTop: 2, fontSize: 11 }}
+                      >
                         on {new Date(a.cancelledAt).toLocaleString()}
                       </div>
                     </div>
@@ -584,6 +601,7 @@ function PostModal({ onClose, onSave }) {
           style={{ marginTop: 12 }}
           onClick={() => onSave(content)}
           disabled={!content}
+          type="button"
         >
           Publish
         </button>
@@ -637,6 +655,7 @@ function CampaignModal({ onClose, onSave }) {
                 'https://placehold.co/800x400/eff4ff/1e40d8?text=Campaign',
             })
           }
+          type="button"
         >
           Create
         </button>
@@ -695,6 +714,7 @@ function VolunteerModal({ onClose, onSave }) {
                 'https://placehold.co/800x400/eff4ff/1e40d8?text=Volunteer',
             })
           }
+          type="button"
         >
           Create
         </button>
@@ -734,6 +754,7 @@ function ListModal({ title, items, onClose }) {
           className="btn btn-neutral btn-block"
           style={{ marginTop: 16 }}
           onClick={onClose}
+          type="button"
         >
           Close
         </button>
@@ -757,10 +778,7 @@ function AttendanceModal({ opportunities, checkins, onClose }) {
         style={{ maxWidth: 560, maxHeight: '80vh', overflowY: 'auto' }}
       >
         <h3 style={{ marginTop: 0 }}>Event attendance</h3>
-        <p
-          className="text-muted"
-          style={{ fontSize: 13, marginBottom: 20 }}
-        >
+        <p className="text-muted" style={{ fontSize: 13, marginBottom: 20 }}>
           {checkins.length} total check-ins across {opportunities.length}{' '}
           {opportunities.length === 1 ? 'event' : 'events'}
         </p>
@@ -835,6 +853,7 @@ function AttendanceModal({ opportunities, checkins, onClose }) {
           className="btn btn-neutral btn-block"
           style={{ marginTop: 20 }}
           onClick={onClose}
+          type="button"
         >
           Close
         </button>

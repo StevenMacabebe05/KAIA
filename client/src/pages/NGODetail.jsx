@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { NGOS } from '../data/ngos'
 import { CAMPAIGNS } from '../data/campaigns'
@@ -20,6 +20,16 @@ export default function NGODetail() {
   const store = useActivity()
   const [tab, setTab] = useState('posts')
   const [messageOpen, setMessageOpen] = useState(false)
+  const tabsRef = useRef(null)
+
+  /* auto-scroll to tabs when tab changes */
+  useEffect(() => {
+    if (tabsRef.current) {
+      const top =
+        tabsRef.current.getBoundingClientRect().top + window.scrollY - 80
+      window.scrollTo({ top, behavior: 'smooth' })
+    }
+  }, [tab])
 
   const ngo = NGOS.find((n) => n.id === id)
   if (!ngo) {
@@ -160,7 +170,7 @@ export default function NGODetail() {
         </div>
       </div>
 
-      <div className="tabs">
+      <div className="tabs" ref={tabsRef}>
         {[
           { key: 'posts', label: 'Posts' },
           { key: 'campaigns', label: 'Campaigns' },

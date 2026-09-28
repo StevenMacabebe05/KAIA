@@ -6,6 +6,7 @@ import { OPPORTUNITIES } from '../data/opportunities'
 import { NGOS } from '../data/ngos'
 import { ACHIEVEMENTS } from '../data/achievements'
 import Icon from '../components/Icon'
+import AnimatedCounter from '../components/AnimatedCounter'
 import ProgressBar from '../components/ProgressBar'
 import {
   ActivityAreaChart,
@@ -55,10 +56,9 @@ export default function MyKaia() {
     const cat = c?.category ?? 'Other'
     categoryMap[cat] = (categoryMap[cat] || 0) + d.amount
   })
-  const categoryDonutData = Object.entries(categoryMap).map(([name, value]) => ({
-    name,
-    value,
-  }))
+  const categoryDonutData = Object.entries(categoryMap).map(
+    ([name, value]) => ({ name, value })
+  )
 
   const donationSpark = IMPACT_HISTORY.map((d) => d.donations)
   const volunteerSpark = IMPACT_HISTORY.map((d) => d.volunteers)
@@ -110,7 +110,7 @@ export default function MyKaia() {
           <div className="stat-rich-top">
             <div>
               <div className="stat-rich-value">
-                ₱{totalDonated.toLocaleString()}
+                ₱<AnimatedCounter value={totalDonated} />
               </div>
               <div className="stat-rich-label">Total donated</div>
             </div>
@@ -126,7 +126,9 @@ export default function MyKaia() {
         <div className="stat-card-rich">
           <div className="stat-rich-top">
             <div>
-              <div className="stat-rich-value">{hours}</div>
+              <div className="stat-rich-value">
+                <AnimatedCounter value={hours} />
+              </div>
               <div className="stat-rich-label">Hours volunteered</div>
             </div>
             <Sparkline data={volunteerSpark} color="#f97316" />
@@ -141,7 +143,9 @@ export default function MyKaia() {
         <div className="stat-card-rich">
           <div className="stat-rich-top">
             <div>
-              <div className="stat-rich-value">{follows.length}</div>
+              <div className="stat-rich-value">
+                <AnimatedCounter value={follows.length} />
+              </div>
               <div className="stat-rich-label">NGOs followed</div>
             </div>
             <Sparkline
@@ -155,7 +159,9 @@ export default function MyKaia() {
         <div className="stat-card-rich">
           <div className="stat-rich-top">
             <div>
-              <div className="stat-rich-value">{saves.length}</div>
+              <div className="stat-rich-value">
+                <AnimatedCounter value={saves.length} />
+              </div>
               <div className="stat-rich-label">Saved causes</div>
             </div>
             <Sparkline
@@ -227,7 +233,8 @@ export default function MyKaia() {
             </p>
           </div>
           <span className="chart-badge orange">
-            {Math.round((unlockedCount / ACHIEVEMENTS.length) * 100)}% complete
+            {Math.round((unlockedCount / ACHIEVEMENTS.length) * 100)}%
+            complete
           </span>
         </div>
 
@@ -237,7 +244,9 @@ export default function MyKaia() {
             return (
               <div
                 key={a.id}
-                className={`achievement ${unlocked ? 'unlocked' : 'locked'}`}
+                className={`achievement ${
+                  unlocked ? 'unlocked' : 'locked'
+                }`}
               >
                 <div className="achievement-icon">
                   <Icon name={a.icon} size={20} />
@@ -351,15 +360,15 @@ export default function MyKaia() {
                 const c = CAMPAIGNS.find((x) => x.id === d.campaignId)
                 const receipt = findReceipt(d)
                 const row = (
-                  <div
-                    className="row-between"
-                    style={{ padding: '10px 0' }}
-                  >
+                  <div className="row-between" style={{ padding: '10px 0' }}>
                     <div>
                       <div style={{ fontWeight: 600, fontSize: 14 }}>
                         {c?.title ?? 'a campaign'}
                       </div>
-                      <div className="text-muted" style={{ fontSize: 12 }}>
+                      <div
+                        className="text-muted"
+                        style={{ fontSize: 12 }}
+                      >
                         {new Date(d.createdAt).toLocaleString('en-US', {
                           month: 'short',
                           day: 'numeric',

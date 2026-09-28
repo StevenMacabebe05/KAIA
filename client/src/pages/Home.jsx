@@ -10,6 +10,7 @@ import { useToast } from '../components/Toast'
 import EmptyState from '../components/EmptyState'
 import VerifiedBadge from '../components/VerifiedBadge'
 import HeroCarousel from '../components/HeroCarousel'
+import Testimonials from '../components/Testimonials'
 import Icon from '../components/Icon'
 
 const HERO_SLIDES = [
@@ -564,6 +565,9 @@ export default function Home() {
           </div>
         </aside>
       </div>
+
+      {/* ---------- TESTIMONIALS ---------- */}
+      <Testimonials />
     </div>
   )
 }
