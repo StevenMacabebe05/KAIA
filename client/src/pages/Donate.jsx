@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CAMPAIGNS } from '../data/campaigns'
 import { NGOS } from '../data/ngos'
 import { useActivity } from '../store/useActivity'
+import { useAuth } from '../context/AuthContext'
 import { useToast } from '../components/Toast'
 import StatusTag from '../components/StatusTag'
 import ProgressBar from '../components/ProgressBar'
@@ -43,8 +44,29 @@ const STATUS_PRIORITY = {
   completed: 3,
 }
 
+/* fake recent donations for the live ticker (demo data) */
+const LIVE_DONATIONS = [
+  { name: 'Maria S.', amount: 500, campaign: 'School Supplies for 500 Kids' },
+  { name: 'Anonymous', amount: 1000, campaign: 'Relief Packs for Typhoon Evacuees' },
+  { name: 'Jose R.', amount: 2500, campaign: 'Coastal Cleanup Drive' },
+  { name: 'Andrea C.', amount: 500, campaign: 'Emergency Medical Supplies' },
+  { name: 'Carlo M.', amount: 100, campaign: 'Mangrove Forest Restoration' },
+  { name: 'Liza T.', amount: 1000, campaign: 'Rescue Van Fuel Fund' },
+  { name: 'Anonymous', amount: 250, campaign: 'School Supplies for 500 Kids' },
+]
+
+/* fake top supporters this week */
+const TOP_SUPPORTERS = [
+  { name: 'Miguel Reyes', amount: 15500, count: 8 },
+  { name: 'Ana Villanueva', amount: 12000, count: 6 },
+  { name: 'Katrina Lim', amount: 9800, count: 5 },
+  { name: 'Ramon Cruz', amount: 7500, count: 4 },
+  { name: 'Sofia Tan', amount: 6200, count: 7 },
+]
+
 export default function Donate() {
   const store = useActivity()
+  const { user } = useAuth()
   const toast = useToast()
 
   const [search, setSearch] = useState('')
@@ -54,10 +76,19 @@ export default function Donate() {
   const [view, setView] = useState('grid')
   const [sortOpen, setSortOpen] = useState(false)
   const [visibleCount, setVisibleCount] = useState(6)
+  const [tickerIndex, setTickerIndex] = useState(0)
 
   const getNgo = (id) => NGOS.find((n) => n.id === id)
 
   const extraVersion = store.getExtraCampaigns().length
+
+  /* ---------- rotating live ticker ---------- */
+  useEffect(() => {
+    const t = setInterval(() => {
+      setTickerIndex((i) => (i + 1) % LIVE_DONATIONS.length)
+    }, 3800)
+    return () => clearInterval(t)
+  }, [])
 
   /* ---------- urgent spotlight ---------- */
   const urgentSpotlight = useMemo(() => {
@@ -68,6 +99,27 @@ export default function Donate() {
     return urgents[0] || null
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [extraVersion])
+
+  /* ---------- featured NGO (highest supporter count) ---------- */
+  const featuredNgo = useMemo(() => {
+    return [...NGOS].sort((a, b) => b.supporterCount - a.supporterCount)[0]
+  }, [])
+
+  /* ---------- your personal stats ---------- */
+  const myStats = useMemo(() => {
+    if (!user) return null
+    const donations = store.getDonations(user.id)
+    const total = donations.reduce((s, d) => s + d.amount, 0)
+    const uniqueCampaigns = new Set(donations.map((d) => d.campaignId)).size
+    const saves = store.getSaved(user.id).length
+    return {
+      total,
+      count: donations.length,
+      uniqueCampaigns,
+      saves,
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
 
   /* ---------- filtered + sorted ---------- */
   const filtered = useMemo(() => {
@@ -136,6 +188,8 @@ export default function Donate() {
 
   const activeSortLabel =
     SORT_OPTIONS.find((o) => o.key === sort)?.label || 'Featured'
+
+  const currentTicker = LIVE_DONATIONS[tickerIndex]
 
   return (
     <div className="container">
@@ -316,108 +370,281 @@ export default function Donate() {
         )}
       </div>
 
-      {/* ---------- CAMPAIGN GRID / LIST ---------- */}
-      {filtered.length === 0 ? (
-        <div className="empty">
-          <div className="empty-icon">
-            <Icon name="search" size={40} strokeWidth={1.5} />
-          </div>
-          <div className="empty-title">No campaigns match</div>
-          <div>Try a different search or filter.</div>
-        </div>
-      ) : (
-        <div
-          className={view === 'grid' ? 'grid grid-3' : 'donate-list'}
-        >
-          {visible.map((c) => {
-            const ngo = getNgo(c.ngoId)
-            return (
-              <div
-                key={c.id}
-                className={`campaign-card ${
-                  view === 'list' ? 'campaign-card-list' : ''
-                }`}
-              >
-                <Link
-                  to={`/campaign/${c.id}`}
-                  className="campaign-card-link"
-                >
-                  <div className="campaign-card-media">
-                    <img
-                      src={c.image}
-                      alt=""
-                      onError={(e) => {
-                        e.target.src = `https://placehold.co/800x400/eff4ff/1e40d8?text=${encodeURIComponent(
-                          c.title
-                        )}`
-                      }}
-                    />
-                    <div className="campaign-card-badges">
-                      <StatusTag status={c.status} />
-                    </div>
-                    <div className="campaign-card-hover-actions">
-                      <button
-                        type="button"
-                        className="campaign-hover-btn"
-                        onClick={(e) => handleShare(c, e)}
-                        title="Share"
-                      >
-                        <Icon name="share" size={14} color="white" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="campaign-card-body">
-                    <div className="campaign-card-title">{c.title}</div>
-                    <div className="campaign-card-ngo">
-                      {ngo?.name}
-                    </div>
-
-                    <div className="campaign-card-progress">
-                      <ProgressBar value={c.raised} goal={c.goal} />
-                    </div>
-
-                    <div className="campaign-card-stats">
-                      <span className="row" style={{ gap: 5 }}>
-                        <Icon name="users" size={13} />
-                        {c.donorCount}
-                      </span>
-                      <span className="row" style={{ gap: 5 }}>
-                        <Icon name="calendar" size={13} />
-                        {c.daysLeft}d left
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-
-                <div className="campaign-card-actions">
-                  <SavedButton campaignId={c.id} />
-                  <Link
-                    to={`/campaign/${c.id}`}
-                    className="btn btn-accent btn-sm campaign-donate-btn"
+      {/* ---------- MAIN + SIDEBAR LAYOUT ---------- */}
+      <div className="donate-layout">
+        {/* LEFT — CAMPAIGN GRID / LIST */}
+        <div className="donate-main">
+          {filtered.length === 0 ? (
+            <div className="empty">
+              <div className="empty-icon">
+                <Icon name="search" size={40} strokeWidth={1.5} />
+              </div>
+              <div className="empty-title">No campaigns match</div>
+              <div>Try a different search or filter.</div>
+            </div>
+          ) : (
+            <div
+              className={view === 'grid' ? 'grid grid-3' : 'donate-list'}
+            >
+              {visible.map((c) => {
+                const ngo = getNgo(c.ngoId)
+                return (
+                  <div
+                    key={c.id}
+                    className={`campaign-card ${
+                      view === 'list' ? 'campaign-card-list' : ''
+                    }`}
                   >
-                    <Icon name="heart" size={13} /> Donate
-                  </Link>
+                    <Link
+                      to={`/campaign/${c.id}`}
+                      className="campaign-card-link"
+                    >
+                      <div className="campaign-card-media">
+                        <img
+                          src={c.image}
+                          alt=""
+                          onError={(e) => {
+                            e.target.src = `https://placehold.co/800x400/eff4ff/1e40d8?text=${encodeURIComponent(
+                              c.title
+                            )}`
+                          }}
+                        />
+                        <div className="campaign-card-badges">
+                          <StatusTag status={c.status} />
+                        </div>
+                        <div className="campaign-card-hover-actions">
+                          <button
+                            type="button"
+                            className="campaign-hover-btn"
+                            onClick={(e) => handleShare(c, e)}
+                            title="Share"
+                          >
+                            <Icon name="share" size={14} color="white" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="campaign-card-body">
+                        <div className="campaign-card-title">
+                          {c.title}
+                        </div>
+                        <div className="campaign-card-ngo">
+                          {ngo?.name}
+                        </div>
+
+                        <div className="campaign-card-progress">
+                          <ProgressBar value={c.raised} goal={c.goal} />
+                        </div>
+
+                        <div className="campaign-card-stats">
+                          <span className="row" style={{ gap: 5 }}>
+                            <Icon name="users" size={13} />
+                            {c.donorCount}
+                          </span>
+                          <span className="row" style={{ gap: 5 }}>
+                            <Icon name="calendar" size={13} />
+                            {c.daysLeft}d left
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+
+                    <div className="campaign-card-actions">
+                      <SavedButton campaignId={c.id} />
+                      <Link
+                        to={`/campaign/${c.id}`}
+                        className="btn btn-accent btn-sm campaign-donate-btn"
+                      >
+                        <Icon name="heart" size={13} /> Donate
+                      </Link>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {hasMore && (
+            <div className="donate-load-more">
+              <button
+                className="btn btn-ghost btn-lg"
+                onClick={() => setVisibleCount((n) => n + 6)}
+                type="button"
+              >
+                Load more campaigns
+                <Icon name="chevron-down" size={16} />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT — SIDEBAR */}
+        <aside className="donate-sidebar">
+          {/* 1. LIVE TICKER */}
+          <div className="sidebar-card">
+            <div className="sidebar-card-header">
+              <h3 className="sidebar-card-title">
+                <span className="live-dot" />
+                Live donations
+              </h3>
+            </div>
+            <div className="live-ticker">
+              <div key={tickerIndex} className="live-ticker-item">
+                <div className="live-ticker-avatar">
+                  {currentTicker.name.charAt(0)}
+                </div>
+                <div className="live-ticker-body">
+                  <div className="live-ticker-line">
+                    <strong>{currentTicker.name}</strong> donated{' '}
+                    <span className="live-ticker-amount">
+                      ₱{currentTicker.amount.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="live-ticker-campaign">
+                    to {currentTicker.campaign}
+                  </div>
                 </div>
               </div>
-            )
-          })}
-        </div>
-      )}
+              <div className="live-ticker-dots">
+                {LIVE_DONATIONS.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`live-ticker-dot ${
+                      i === tickerIndex ? 'active' : ''
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
 
-      {/* ---------- LOAD MORE ---------- */}
-      {hasMore && (
-        <div className="donate-load-more">
-          <button
-            className="btn btn-ghost btn-lg"
-            onClick={() => setVisibleCount((n) => n + 6)}
-            type="button"
-          >
-            Load more campaigns
-            <Icon name="chevron-down" size={16} />
-          </button>
-        </div>
-      )}
+          {/* 2. MATCHING CHALLENGE */}
+          <div className="matching-card">
+            <div className="matching-badge">
+              <Icon name="trending" size={12} />
+              Double your impact
+            </div>
+            <h3 className="matching-title">
+              Every peso matched until March 31
+            </h3>
+            <p className="matching-desc">
+              Angat Buhay Foundation will match all donations to education
+              campaigns — up to ₱500,000.
+            </p>
+            <Link
+              to="/campaign/camp-1"
+              className="btn btn-white btn-sm matching-cta"
+            >
+              Donate to a matched campaign
+              <Icon name="arrow-right" size={13} />
+            </Link>
+          </div>
+
+          {/* 3. TOP SUPPORTERS */}
+          <div className="sidebar-card">
+            <div className="sidebar-card-header">
+              <h3 className="sidebar-card-title">Top supporters</h3>
+              <span className="sidebar-card-link">This week</span>
+            </div>
+            <div className="sidebar-list">
+              {TOP_SUPPORTERS.map((s, i) => (
+                <div key={s.name} className="leaderboard-item">
+                  <div
+                    className={`leaderboard-rank ${
+                      i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : ''
+                    }`}
+                  >
+                    {i + 1}
+                  </div>
+                  <div className="leaderboard-info">
+                    <div className="leaderboard-name">{s.name}</div>
+                    <div className="leaderboard-meta">
+                      {s.count} {s.count === 1 ? 'donation' : 'donations'}
+                    </div>
+                  </div>
+                  <div className="leaderboard-amount">
+                    ₱{s.amount.toLocaleString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 4. FEATURED NGO */}
+          {featuredNgo && (
+            <div className="sidebar-card">
+              <div className="sidebar-card-header">
+                <h3 className="sidebar-card-title">Featured NGO</h3>
+              </div>
+              <Link
+                to={`/ngo/${featuredNgo.id}`}
+                className="featured-ngo"
+              >
+                <div className="featured-ngo-cover">
+                  <img src={featuredNgo.cover} alt="" />
+                  <div className="featured-ngo-overlay" />
+                </div>
+                <div className="featured-ngo-body">
+                  <img
+                    src={featuredNgo.logo}
+                    alt=""
+                    className="featured-ngo-logo"
+                  />
+                  <div className="featured-ngo-name">
+                    {featuredNgo.name}
+                    {featuredNgo.verified && (
+                      <span className="featured-ngo-verified">
+                        <Icon name="check" size={10} />
+                      </span>
+                    )}
+                  </div>
+                  <div className="featured-ngo-tagline">
+                    {featuredNgo.tagline}
+                  </div>
+                  <div className="featured-ngo-stats">
+                    <Icon name="users" size={12} />
+                    {featuredNgo.supporterCount.toLocaleString()} supporters
+                  </div>
+                </div>
+              </Link>
+            </div>
+          )}
+
+          {/* 5. YOUR IMPACT (logged in only) */}
+          {user && myStats && (
+            <div className="sidebar-card">
+              <div className="sidebar-card-header">
+                <h3 className="sidebar-card-title">Your impact</h3>
+                <Link to="/my-kaia" className="sidebar-card-link">
+                  View all
+                </Link>
+              </div>
+              <div className="my-impact-grid">
+                <div className="my-impact-cell">
+                  <div className="my-impact-value">
+                    ₱{myStats.total.toLocaleString()}
+                  </div>
+                  <div className="my-impact-label">Donated</div>
+                </div>
+                <div className="my-impact-cell">
+                  <div className="my-impact-value">{myStats.count}</div>
+                  <div className="my-impact-label">Gifts</div>
+                </div>
+                <div className="my-impact-cell">
+                  <div className="my-impact-value">
+                    {myStats.uniqueCampaigns}
+                  </div>
+                  <div className="my-impact-label">Causes</div>
+                </div>
+                <div className="my-impact-cell">
+                  <div className="my-impact-value">{myStats.saves}</div>
+                  <div className="my-impact-label">Saved</div>
+                </div>
+              </div>
+            </div>
+          )}
+        </aside>
+      </div>
     </div>
   )
 }
