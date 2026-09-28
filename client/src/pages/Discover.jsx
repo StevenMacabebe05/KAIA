@@ -176,21 +176,20 @@ export default function Discover() {
                       </div>
                     </div>
 
-                    {user && (
-                      <button
-                        type="button"
-                        className={`btn btn-block ${
-                          following ? 'btn-ghost' : 'btn-primary'
-                        }`}
-                        onClick={() => store.toggleFollow(user.id, ngo.id)}
-                      >
-                        {following ? 'Following' : 'Follow'}
-                      </button>
-                    )}
-
-                    <Link to={`/ngo/${ngo.id}`} className="ngo-card-view">
-                      View profile <Icon name="arrow-right" size={13} />
-                    </Link>
+                    <div className="ngo-card-cta-row">
+                      {user && (
+                        <button
+                          type="button"
+                          className={`btn ${following ? 'btn-ghost' : 'btn-primary'} ngo-card-cta`}
+                          onClick={() => store.toggleFollow(user.id, ngo.id)}
+                        >
+                          {following ? 'Following' : 'Follow'}
+                        </button>
+                      )}
+                      <Link to={`/ngo/${ngo.id}`} className="ngo-card-view ngo-card-cta">
+                        View profile <Icon name="arrow-right" size={13} />
+                      </Link>
+                    </div>
                   </div>
                 </article>
               )
