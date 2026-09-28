@@ -54,12 +54,18 @@ export default function NotificationBell() {
     setOpen(false)
   }
 
+  function goToAll() {
+    setOpen(false)
+    navigate('/notifications')
+  }
+
   return (
     <div className="notif-wrapper" ref={wrapperRef}>
       <button
         className={`notif-trigger ${unread > 0 ? 'has-unread' : ''}`}
         onClick={() => setOpen((o) => !o)}
         aria-label="Notifications"
+        type="button"
       >
         <Icon name="bell" size={18} />
         {unread > 0 && (
@@ -80,6 +86,7 @@ export default function NotificationBell() {
               <button
                 className="btn btn-neutral btn-sm"
                 onClick={() => store.markAllAsRead(user.id)}
+                type="button"
               >
                 Mark all read
               </button>
@@ -90,16 +97,19 @@ export default function NotificationBell() {
             {notifications.length === 0 ? (
               <div className="notif-empty">
                 <Icon name="bell" size={28} color="var(--ink-300)" />
-                <div style={{ marginTop: 8, fontSize: 13 }}>No activity yet</div>
+                <div style={{ marginTop: 8, fontSize: 13 }}>
+                  No activity yet
+                </div>
               </div>
             ) : (
-              notifications.slice(0, 20).map((n) => {
+              notifications.slice(0, 6).map((n) => {
                 const meta = TYPE_META[n.type] || TYPE_META.system
                 return (
                   <button
                     key={n.id}
                     className={`notif-item ${!n.read ? 'unread' : ''}`}
                     onClick={() => handleClick(n)}
+                    type="button"
                   >
                     <span
                       className="notif-icon"
@@ -119,16 +129,32 @@ export default function NotificationBell() {
             )}
           </div>
 
-          {notifications.length > 0 && (
-            <div className="notif-footer">
+          {/* ---------- FOOTER — always visible with two actions ---------- */}
+          <div className="notif-footer">
+            <button
+              className="notif-footer-view-all"
+              onClick={goToAll}
+              type="button"
+            >
+              <span>View all notifications</span>
+              {notifications.length > 6 && (
+                <span className="notif-footer-count">
+                  +{notifications.length - 6} more
+                </span>
+              )}
+              <Icon name="arrow-right" size={14} />
+            </button>
+            {notifications.length > 0 && (
               <button
                 className="btn btn-neutral btn-sm btn-block"
+                style={{ marginTop: 6 }}
                 onClick={() => store.clearNotifications(user.id)}
+                type="button"
               >
                 Clear all activity
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
     </div>
