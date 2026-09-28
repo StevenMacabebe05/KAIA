@@ -22,16 +22,17 @@ export default function MessageModal({ ngo, onClose }) {
     if (!text.trim()) return
     const msg = text.trim()
     setText('')
-    store.sendMessage(user.id, ngo.id, msg, 'user')
+    store.sendMessage(user.id, ngo.id, msg, 'user', user.name)
 
-    // simulate NGO auto-reply
     setTyping(true)
     setTimeout(() => {
       setTyping(false)
       store.sendMessage(
         user.id,
         ngo.id,
-        `Hi ${user.name.split(' ')[0]}! Thanks for reaching out. One of our team members will get back to you shortly. In the meantime, feel free to explore our campaigns and volunteer opportunities. — ${ngo.name}`,
+        `Hi ${
+          user.name.split(' ')[0]
+        }! Thanks for reaching out. One of our team members will get back to you shortly. In the meantime, feel free to explore our campaigns and volunteer opportunities. — ${ngo.name}`,
         'ngo'
       )
     }, 1400)

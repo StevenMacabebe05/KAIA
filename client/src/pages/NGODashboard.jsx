@@ -81,6 +81,7 @@ export default function NGODashboard() {
   const applications = store.getApplicationsForNgo(opportunityIds)
 
   const TILES = [
+    { key: 'inbox', label: 'Inbox', icon: 'message-circle', link: '/inbox' },
     { key: 'scan', label: 'Scan check-in', icon: 'search', link: '/scan' },
     { key: 'post', label: 'Create Post', icon: 'megaphone' },
     { key: 'campaign', label: 'Create Campaign', icon: 'heart' },
@@ -236,28 +237,50 @@ export default function NGODashboard() {
                 }}
               >
                 <Icon name={t.icon} size={20} />
-                {t.key === 'applications' && applications.length > 0 && (
-                  <span
-                    style={{
-                      position: 'absolute',
-                      top: -4,
-                      right: -4,
-                      minWidth: 16,
-                      height: 16,
-                      borderRadius: 999,
-                      background: 'var(--orange-500)',
-                      color: 'white',
-                      fontSize: 9,
-                      fontWeight: 800,
-                      display: 'grid',
-                      placeItems: 'center',
-                      padding: '0 4px',
-                      border: '2px solid white',
-                    }}
-                  >
-                    {applications.length}
-                  </span>
-                )}
+{t.key === 'applications' && applications.length > 0 && (
+  <span
+    style={{
+      position: 'absolute',
+      top: -4,
+      right: -4,
+      minWidth: 16,
+      height: 16,
+      borderRadius: 999,
+      background: 'var(--orange-500)',
+      color: 'white',
+      fontSize: 9,
+      fontWeight: 800,
+      display: 'grid',
+      placeItems: 'center',
+      padding: '0 4px',
+      border: '2px solid white',
+    }}
+  >
+    {applications.length}
+  </span>
+)}
+{t.key === 'inbox' && store.getNgoUnreadTotal(user.ngoId) > 0 && (
+  <span
+    style={{
+      position: 'absolute',
+      top: -4,
+      right: -4,
+      minWidth: 16,
+      height: 16,
+      borderRadius: 999,
+      background: 'var(--red-600)',
+      color: 'white',
+      fontSize: 9,
+      fontWeight: 800,
+      display: 'grid',
+      placeItems: 'center',
+      padding: '0 4px',
+      border: '2px solid white',
+    }}
+  >
+    {store.getNgoUnreadTotal(user.ngoId)}
+  </span>
+)}
               </div>
               <div style={{ fontWeight: 700, fontSize: 14 }}>{t.label}</div>
             </>

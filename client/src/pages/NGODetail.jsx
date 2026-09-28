@@ -12,7 +12,17 @@ import ProgressBar from '../components/ProgressBar'
 import EmptyState from '../components/EmptyState'
 import CommentSection from '../components/CommentSection'
 import MessageModal from '../components/MessageModal'
+import ImpactTab from '../components/ImpactTab'
+import FinancialReport from '../components/FinancialReport'
 import Icon from '../components/Icon'
+
+const TABS = [
+  { key: 'posts', label: 'Posts' },
+  { key: 'campaigns', label: 'Campaigns' },
+  { key: 'volunteer', label: 'Volunteer' },
+  { key: 'impact', label: 'Impact' },
+  { key: 'financials', label: 'Financials' },
+]
 
 export default function NGODetail() {
   const { id } = useParams()
@@ -22,7 +32,6 @@ export default function NGODetail() {
   const [messageOpen, setMessageOpen] = useState(false)
   const tabsRef = useRef(null)
 
-  /* auto-scroll to tabs when tab changes */
   useEffect(() => {
     if (tabsRef.current) {
       const top =
@@ -102,38 +111,40 @@ export default function NGODetail() {
                 {ngo.tagline}
               </p>
             </div>
-        {user && (
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button
-              className={`btn ${following ? 'btn-ghost' : 'btn-primary'}`}
-              onClick={() => store.toggleFollow(user.id, ngo.id)}
-            >
-              {following ? 'Following' : 'Follow'}
-            </button>
-            <button
-              className="btn btn-neutral"
-              onClick={() => setMessageOpen(true)}
-            >
-              <Icon name="message-circle" size={14} /> Message
-            </button>
-            {ngo.isDeep ? (
-              <Link to="/donate" className="btn btn-accent">
-                <Icon name="heart" size={14} /> Donate
-              </Link>
-            ) : (
-              <button
-                className="btn btn-accent"
-                onClick={() =>
-                  alert(
-                    'Demo NGO — campaigns not available in this prototype.\n\nTry Angat Buhay Foundation for a full demo.'
-                  )
-                }
+            {user && (
+              <div
+                style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}
               >
-                Donate
-              </button>
+                <button
+                  className={`btn ${following ? 'btn-ghost' : 'btn-primary'}`}
+                  onClick={() => store.toggleFollow(user.id, ngo.id)}
+                >
+                  {following ? 'Following' : 'Follow'}
+                </button>
+                <button
+                  className="btn btn-neutral"
+                  onClick={() => setMessageOpen(true)}
+                >
+                  <Icon name="message-circle" size={14} /> Message
+                </button>
+                {ngo.isDeep ? (
+                  <Link to="/donate" className="btn btn-accent">
+                    <Icon name="heart" size={14} /> Donate
+                  </Link>
+                ) : (
+                  <button
+                    className="btn btn-accent"
+                    onClick={() =>
+                      alert(
+                        'Demo NGO — campaigns not available in this prototype.\n\nTry Angat Buhay Foundation for a full demo.'
+                      )
+                    }
+                  >
+                    Donate
+                  </button>
+                )}
+              </div>
             )}
-          </div>
-        )}
           </div>
 
           <p
@@ -170,16 +181,13 @@ export default function NGODetail() {
         </div>
       </div>
 
-      <div className="tabs" ref={tabsRef}>
-        {[
-          { key: 'posts', label: 'Posts' },
-          { key: 'campaigns', label: 'Campaigns' },
-          { key: 'volunteer', label: 'Volunteer' },
-        ].map((t) => (
+      <div className="tabs tabs-sticky" ref={tabsRef}>
+        {TABS.map((t) => (
           <button
             key={t.key}
             className={`tab ${tab === t.key ? 'active' : ''}`}
             onClick={() => setTab(t.key)}
+            type="button"
           >
             {t.label}
           </button>
@@ -309,7 +317,10 @@ export default function NGODetail() {
                   <span className="text-muted" style={{ fontSize: 13 }}>
                     {o.needed - o.registered} slots left
                   </span>
-                  <Link to="/volunteer" className="btn btn-primary btn-sm">
+                  <Link
+                    to="/volunteer"
+                    className="btn btn-primary btn-sm"
+                  >
                     Volunteer
                   </Link>
                 </div>
@@ -317,9 +328,16 @@ export default function NGODetail() {
             ))}
           </div>
         ))}
-        {messageOpen && (
-  <MessageModal ngo={ngo} onClose={() => setMessageOpen(false)} />
-)}
+
+      {tab === 'impact' && (
+        <ImpactTab ngoId={ngo.id} ngoName={ngo.name} />
+      )}
+
+      {tab === 'financials' && <FinancialReport ngoId={ngo.id} />}
+
+      {messageOpen && (
+        <MessageModal ngo={ngo} onClose={() => setMessageOpen(false)} />
+      )}
     </div>
   )
 }

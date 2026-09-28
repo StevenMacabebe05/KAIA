@@ -63,22 +63,6 @@ const SEED_COMMENTS = [
     text: 'Donated 100 points! Happy to help the kapon program 💚',
     createdAt: days(0.1),
   },
-  {
-    id: 'sc-4',
-    postId: 'p-paws',
-    userId: 'u-fake-4',
-    userName: 'Carlo Mendoza',
-    text: 'Just scheduled my cat for her spay. Thanks PAWS!',
-    createdAt: days(0.2),
-  },
-  {
-    id: 'sc-5',
-    postId: 'p-1',
-    userId: 'u-fake-5',
-    userName: 'Liza Tan',
-    text: 'So inspiring! Just donated to this campaign.',
-    createdAt: days(0.1),
-  },
 ]
 
 const SEED_FOLLOWS = [
@@ -87,18 +71,10 @@ const SEED_FOLLOWS = [
   { userId: 'u-1', ngoId: 'ngo-4' },
 ]
 
-/* ---------------------------------------------------------
-   Demo supporter (u-1) starts with NOTHING volunteer-related
-   so all 4 opportunities show as fresh "View details"
-   --------------------------------------------------------- */
 const SEED_SIGNUPS = []
 const SEED_VOLUNTEER_IDS = []
 const SEED_APPLICATIONS = []
 
-/* ---------------------------------------------------------
-   For the NGO dashboard — separate fake users so the
-   supporter profile stays clean but the NGO sees applicants
-   --------------------------------------------------------- */
 const SEED_FAKE_SIGNUPS = [
   {
     userId: 'u-fake-1',
@@ -127,11 +103,8 @@ const SEED_SHARES = [
   { id: 'sh-1', postId: 'p-call', userId: 'u-fake-1', sharedAt: days(0.05) },
   { id: 'sh-2', postId: 'p-call', userId: 'u-fake-2', sharedAt: days(0.08) },
   { id: 'sh-3', postId: 'p-call', userId: 'u-fake-3', sharedAt: days(0.1) },
-  { id: 'sh-4', postId: 'p-call', userId: 'u-fake-4', sharedAt: days(0.15) },
-  { id: 'sh-5', postId: 'p-call', userId: 'u-fake-5', sharedAt: days(0.2) },
-  { id: 'sh-6', postId: 'p-paws', userId: 'u-fake-1', sharedAt: days(0.04) },
-  { id: 'sh-7', postId: 'p-paws', userId: 'u-fake-2', sharedAt: days(0.06) },
-  { id: 'sh-8', postId: 'p-paws', userId: 'u-fake-3', sharedAt: days(0.12) },
+  { id: 'sh-4', postId: 'p-paws', userId: 'u-fake-1', sharedAt: days(0.04) },
+  { id: 'sh-5', postId: 'p-paws', userId: 'u-fake-2', sharedAt: days(0.06) },
 ]
 
 const SEED_FAKE_APPLICATIONS = [
@@ -182,6 +155,50 @@ const SEED_FAKE_APPLICATIONS = [
   },
 ]
 
+/* Seed NGO inbox — supporters who have already messaged Angat Buhay */
+const SEED_MESSAGES = [
+  {
+    id: 'seed-msg-1',
+    userId: 'u-fake-1',
+    ngoId: 'ngo-1',
+    from: 'user',
+    userName: 'Maria Santos',
+    text: 'Hi! I saw your call for volunteers. Do you still need people for the Feb 14 repacking?',
+    read: false,
+    createdAt: days(0.05),
+  },
+  {
+    id: 'seed-msg-2',
+    userId: 'u-fake-2',
+    ngoId: 'ngo-1',
+    from: 'user',
+    userName: 'Jose Reyes',
+    text: 'Is the community learning center build open to students?',
+    read: false,
+    createdAt: days(0.3),
+  },
+  {
+    id: 'seed-msg-3',
+    userId: 'u-fake-3',
+    ngoId: 'ngo-1',
+    from: 'user',
+    userName: 'Andrea Cruz',
+    text: 'Just donated ₱500 to the school kits campaign. Keep up the great work! 🙌',
+    read: true,
+    createdAt: days(1.2),
+  },
+  {
+    id: 'seed-msg-4',
+    userId: 'u-fake-1',
+    ngoId: 'ngo-3',
+    from: 'user',
+    userName: 'Maria Santos',
+    text: 'Can I bring my own dog to volunteer at the shelter?',
+    read: false,
+    createdAt: days(0.4),
+  },
+]
+
 function buildInitialState() {
   return {
     ...EMPTY,
@@ -192,6 +209,7 @@ function buildInitialState() {
     notifications: [...SEED_NOTIFICATIONS],
     comments: [...SEED_COMMENTS],
     shares: [...SEED_SHARES],
+    messages: [...SEED_MESSAGES],
   }
 }
 
@@ -394,10 +412,7 @@ export const activityStore = {
       (s) => s.userId === userId && s.opportunityId === opportunityId
     )
     if (signup && signup.status === 'cancelled') {
-      return {
-        reason: signup.cancellationReason,
-        at: signup.cancelledAt,
-      }
+      return { reason: signup.cancellationReason, at: signup.cancelledAt }
     }
     return null
   },
@@ -614,18 +629,70 @@ export const activityStore = {
     state.messages
       .filter((m) => m.userId === userId && m.ngoId === ngoId)
       .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)),
-  sendMessage: (userId, ngoId, text, from = 'user') => {
+  sendMessage: (userId, ngoId, text, from = 'user', userName = '') => {
     if (!text || !text.trim()) return
     state.messages.push({
       id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       userId,
       ngoId,
       from,
+      userName: userName || '',
       text: text.trim(),
+      read: from === 'ngo',
       createdAt: new Date().toISOString(),
     })
     save(state)
   },
   getUnreadMessageCount: (userId) =>
-    state.messages.filter((m) => m.userId === userId && m.from === 'ngo').length,
+    state.messages.filter((m) => m.userId === userId && m.from === 'ngo' && !m.read)
+      .length,
+
+  /* NGO INBOX — group by supporter */
+  getNgoConversations: (ngoId) => {
+    const byUser = {}
+    state.messages.forEach((m) => {
+      if (m.ngoId !== ngoId) return
+      if (!byUser[m.userId]) byUser[m.userId] = []
+      byUser[m.userId].push(m)
+    })
+    return Object.entries(byUser)
+      .map(([userId, msgs]) => {
+        const sorted = [...msgs].sort(
+          (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+        )
+        return {
+          userId,
+          userName: sorted.find((m) => m.userName)?.userName || 'Supporter',
+          messages: sorted,
+          lastMessage: sorted[sorted.length - 1],
+          unreadCount: sorted.filter((m) => m.from === 'user' && !m.read)
+            .length,
+          totalCount: sorted.length,
+        }
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.lastMessage.createdAt) -
+          new Date(a.lastMessage.createdAt)
+      )
+  },
+  markConversationRead: (userId, ngoId) => {
+    let changed = false
+    state.messages.forEach((m) => {
+      if (
+        m.userId === userId &&
+        m.ngoId === ngoId &&
+        m.from === 'user' &&
+        !m.read
+      ) {
+        m.read = true
+        changed = true
+      }
+    })
+    if (changed) save(state)
+  },
+  getNgoUnreadTotal: (ngoId) =>
+    state.messages.filter(
+      (m) => m.ngoId === ngoId && m.from === 'user' && !m.read
+    ).length,
 }

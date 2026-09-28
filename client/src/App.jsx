@@ -16,6 +16,7 @@ import Volunteer from './pages/Volunteer'
 import MyKaia from './pages/MyKaia'
 import RegisterNGO from './pages/RegisterNGO'
 import NGODashboard from './pages/NGODashboard'
+import NGOInbox from './pages/NGOInbox'
 import Receipt from './pages/Receipt'
 import ScanCheckIn from './pages/ScanCheckIn'
 import Notifications from './pages/Notifications'
@@ -69,6 +70,14 @@ export default function App() {
                   element={
                     <ProtectedRoute requireRole="ngo_rep">
                       <NGODashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/inbox"
+                  element={
+                    <ProtectedRoute requireRole="ngo_rep">
+                      <NGOInbox />
                     </ProtectedRoute>
                   }
                 />

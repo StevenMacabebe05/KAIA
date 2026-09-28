@@ -6135,3 +6135,644 @@ body,
   margin-left: auto;
   margin-right: 6px;
 }
+
+/* =========================================================
+   FEATURE 1 — NGO INBOX
+   ========================================================= */
+
+.inbox-layout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 0;
+  background: var(--white);
+  border: 1px solid var(--ink-100);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  min-height: 560px;
+  box-shadow: var(--shadow-xs);
+}
+
+@media (max-width: 900px) {
+  .inbox-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.inbox-list {
+  border-right: 1px solid var(--ink-100);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--white);
+}
+
+.inbox-search {
+  position: relative;
+  padding: 14px;
+  border-bottom: 1px solid var(--ink-100);
+}
+
+.inbox-search input {
+  width: 100%;
+  padding: 9px 12px 9px 34px;
+  border-radius: 10px;
+  border: 1.5px solid var(--ink-100);
+  background: var(--ink-50);
+  color: var(--ink-900);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+
+.inbox-search input:focus {
+  border-color: var(--blue-700);
+  background: var(--white);
+}
+
+.inbox-search .search-icon {
+  position: absolute;
+  left: 26px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-500);
+  pointer-events: none;
+}
+
+.inbox-list-items {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 600px;
+}
+
+.inbox-list-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--ink-500);
+  font-size: 13px;
+}
+
+.inbox-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--ink-50);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s ease;
+  position: relative;
+}
+
+.inbox-item:hover {
+  background: var(--ink-50);
+}
+
+.inbox-item.active {
+  background: var(--blue-50);
+  border-left: 3px solid var(--blue-700);
+  padding-left: 13px;
+}
+
+.inbox-item.unread {
+  background: rgba(239, 244, 255, 0.4);
+}
+
+.inbox-item-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue-700), var(--blue-900));
+  color: white;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.inbox-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.inbox-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+
+.inbox-item-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inbox-item-time {
+  font-size: 10px;
+  color: var(--ink-500);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.inbox-item-preview {
+  font-size: 12px;
+  color: var(--ink-500);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.inbox-item-you {
+  color: var(--ink-700);
+  font-weight: 700;
+}
+
+.inbox-item-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--red-600);
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+/* thread */
+.inbox-thread {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--ink-50);
+}
+
+.inbox-thread-empty {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--ink-500);
+}
+
+.inbox-thread-empty-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink-900);
+  margin-top: 14px;
+  margin-bottom: 4px;
+}
+
+.inbox-thread-empty-text {
+  font-size: 13px;
+  max-width: 280px;
+}
+
+.inbox-thread-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: var(--white);
+  border-bottom: 1px solid var(--ink-100);
+}
+
+.inbox-thread-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink-900);
+}
+
+.inbox-thread-meta {
+  font-size: 12px;
+  color: var(--ink-500);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.inbox-thread-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 480px;
+}
+
+/* ---------- dark mode ---------- */
+[data-theme='dark'] .inbox-layout,
+[data-theme='dark'] .inbox-list,
+[data-theme='dark'] .inbox-thread-header {
+  background: #0f1729;
+  border-color: var(--ink-100);
+}
+
+[data-theme='dark'] .inbox-thread {
+  background: #0a1220;
+}
+
+[data-theme='dark'] .inbox-item.active {
+  background: rgba(59, 130, 246, 0.15);
+}
+
+[data-theme='dark'] .inbox-item.unread {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+/* =========================================================
+   FEATURE 2 — FINANCIAL REPORT
+   ========================================================= */
+
+.fin-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 4px;
+}
+
+.fin-breakdown-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fin-breakdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.fin-breakdown-label-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fin-breakdown-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.fin-breakdown-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-700);
+}
+
+.fin-breakdown-pct {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--blue-700);
+}
+
+.fin-breakdown-track {
+  height: 8px;
+  background: var(--ink-100);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.fin-breakdown-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.5s ease;
+}
+
+/* ---------- yearly bars ---------- */
+.fin-years {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  align-items: flex-end;
+  min-height: 180px;
+  padding: 8px 0;
+}
+
+.fin-year {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.fin-year-value {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--blue-700);
+}
+
+.fin-year-bar-wrap {
+  width: 100%;
+  height: 120px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: var(--ink-50);
+  border-radius: 10px;
+  overflow: hidden;
+  padding: 4px;
+}
+
+.fin-year-bar {
+  width: 100%;
+  border-radius: 8px;
+  background: linear-gradient(180deg, var(--blue-700), var(--blue-900));
+  transition: height 0.6s ease;
+  min-height: 8px;
+}
+
+.fin-year-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink-500);
+}
+
+/* ---------- trust list ---------- */
+.fin-trust-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fin-trust-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.fin-trust-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--blue-700);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.fin-trust-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink-900);
+  margin-bottom: 2px;
+}
+
+.fin-trust-body {
+  font-size: 12.5px;
+  color: var(--ink-700);
+  line-height: 1.5;
+}
+
+/* =========================================================
+   FEATURE 5 — IMPACT TAB
+   ========================================================= */
+
+.impact-hero {
+  background: linear-gradient(135deg, var(--blue-700) 0%, var(--blue-900) 100%);
+  border-radius: var(--radius-lg);
+  padding: 28px 28px 24px;
+  color: white;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.impact-hero::after {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: rgba(249, 115, 22, 0.18);
+  pointer-events: none;
+}
+
+.impact-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 14px;
+}
+
+.impact-hero-title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  margin: 0 0 24px;
+  color: white;
+  max-width: 640px;
+  position: relative;
+  z-index: 1;
+}
+
+.impact-hero-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 720px) {
+  .impact-hero-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .impact-hero-title {
+    font-size: 17px;
+  }
+}
+
+.impact-hero-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.impact-hero-value {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.impact-hero-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.75;
+}
+
+/* monthly bars */
+.impact-bars {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  align-items: flex-end;
+  min-height: 200px;
+  padding: 8px 0;
+}
+
+@media (max-width: 640px) {
+  .impact-bars {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.impact-bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.impact-bar-value {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--blue-700);
+}
+
+.impact-bar-wrap {
+  width: 100%;
+  height: 120px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: var(--ink-50);
+  border-radius: 10px;
+  overflow: hidden;
+  padding: 4px;
+}
+
+.impact-bar {
+  width: 100%;
+  background: linear-gradient(180deg, var(--blue-700), var(--blue-900));
+  border-radius: 8px;
+  transition: height 0.6s ease;
+  min-height: 8px;
+}
+
+.impact-bar-month {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-500);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* timeline */
+.impact-timeline {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0;
+}
+
+.impact-milestone {
+  display: flex;
+  gap: 16px;
+  position: relative;
+}
+
+.impact-milestone-dot-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  padding-top: 4px;
+}
+
+.impact-milestone-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--blue-700);
+  border: 3px solid var(--blue-50);
+  box-shadow: 0 0 0 1.5px var(--blue-700);
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.impact-milestone-line {
+  flex: 1;
+  width: 2px;
+  background: var(--ink-100);
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+.impact-milestone-content {
+  padding-bottom: 24px;
+  flex: 1;
+  min-width: 0;
+}
+
+.impact-milestone-image {
+  width: 100%;
+  max-width: 320px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.impact-milestone-date {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-500);
+  margin-bottom: 3px;
+}
+
+.impact-milestone-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-900);
+  line-height: 1.4;
+}
+
+/* ---------- dark mode ---------- */
+[data-theme='dark'] .fin-year-bar-wrap,
+[data-theme='dark'] .impact-bar-wrap {
+  background: #16203a;
+}
+
+[data-theme='dark'] .impact-milestone-line {
+  background: var(--ink-100);
+}
+
+[data-theme='dark'] .impact-milestone-dot {
+  border-color: #0a1220;
+}
