@@ -18,6 +18,7 @@ import RegisterNGO from './pages/RegisterNGO'
 import NGODashboard from './pages/NGODashboard'
 import Receipt from './pages/Receipt'
 import ScanCheckIn from './pages/ScanCheckIn'
+import Notifications from './pages/Notifications'
 import NotFound from './pages/NotFound'
 
 export default function App() {
@@ -39,6 +40,14 @@ export default function App() {
                 <Route path="/volunteer" element={<Volunteer />} />
                 <Route path="/receipt/:id" element={<Receipt />} />
 
+                <Route
+                  path="/notifications"
+                  element={
+                    <ProtectedRoute>
+                      <Notifications />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/my-kaia"
                   element={

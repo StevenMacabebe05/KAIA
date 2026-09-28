@@ -12,9 +12,9 @@ import VolunteerTicket from '../components/VolunteerTicket'
 import VolunteerApplicationForm from '../components/VolunteerApplicationForm'
 import VolunteerDetailModal from '../components/VolunteerDetailModal'
 import CancelVolunteerModal from '../components/CancelVolunteerModal'
+import VolunteerCalendar from '../components/VolunteerCalendar'
 import Icon from '../components/Icon'
 
-/* fake live signups for the ticker */
 const LIVE_SIGNUPS = [
   { name: 'Andrea C.', event: 'Coastal Cleanup Drive', ago: '2 min ago' },
   { name: 'Miguel R.', event: 'Relief Pack Assembly Day', ago: '8 min ago' },
@@ -47,6 +47,7 @@ export default function Volunteer() {
   const [applying, setApplying] = useState(null)
   const [cancelling, setCancelling] = useState(null)
   const [tickerIndex, setTickerIndex] = useState(0)
+  const [calendarDay, setCalendarDay] = useState(null)
 
   const all = [...OPPORTUNITIES, ...store.getExtraOpportunities()]
 
@@ -67,10 +68,8 @@ export default function Volunteer() {
 
   const getNgo = (id) => NGOS.find((n) => n.id === id)
 
-  /* ---------- filtered + sorted ---------- */
   const filtered = useMemo(() => {
     let list = [...all]
-
     if (tab === 'nearby') {
       list = list.filter((o) => o.location === 'Quezon City')
     } else if (tab === 'this-week') {
@@ -81,7 +80,6 @@ export default function Volunteer() {
         return diff >= 0 && diff <= 7
       })
     }
-
     if (search.trim()) {
       const q = search.toLowerCase()
       list = list.filter((o) => {
@@ -94,19 +92,16 @@ export default function Volunteer() {
         )
       })
     }
-
     const sorters = {
       soonest: (a, b) => new Date(a.date) - new Date(b.date),
       latest: (a, b) => new Date(b.date) - new Date(a.date),
       slots: (a, b) => b.needed - b.registered - (a.needed - a.registered),
       title: (a, b) => a.title.localeCompare(b.title),
     }
-
     return list.sort(sorters[sort] || sorters.soonest)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [all.length, tab, search, sort])
 
-  /* ---------- rotating live ticker ---------- */
   useEffect(() => {
     const t = setInterval(() => {
       setTickerIndex((i) => (i + 1) % LIVE_SIGNUPS.length)
@@ -114,7 +109,6 @@ export default function Volunteer() {
     return () => clearInterval(t)
   }, [])
 
-  /* ---------- your upcoming events ---------- */
   const myUpcoming = useMemo(() => {
     if (!user) return []
     const signups = store.getSignups(user.id)
@@ -132,7 +126,6 @@ export default function Volunteer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, store])
 
-  /* ---------- categories with open slots ---------- */
   const categoryStats = useMemo(() => {
     const groups = {}
     all.forEach((o) => {
@@ -152,7 +145,6 @@ export default function Volunteer() {
 
   const maxCategorySlots = categoryStats[0]?.slots || 1
 
-  /* ---------- NGO spotlight ---------- */
   const spotlightNgo = useMemo(() => {
     const ngoSlots = {}
     all.forEach((o) => {
@@ -173,7 +165,6 @@ export default function Volunteer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [all.length])
 
-  /* ---------- actions ---------- */
   function openDetail(opp) {
     setDetail(opp)
   }
@@ -200,22 +191,18 @@ export default function Volunteer() {
       ...formData,
       hours: 0,
     })
-
     if (!result) {
       openTicket(opp)
       setApplying(null)
       return
     }
-
     const { volunteerId } = result
-
     store.addNotification(user.id, {
       type: 'signup',
       title: 'Volunteer ID issued',
       body: `Application confirmed for "${opp.title}". Show your QR code at the event.`,
       link: '/my-kaia',
     })
-
     setConfettiKey((k) => k + 1)
     setTicket({ volunteerId, opportunity: opp })
     setApplying(null)
@@ -241,6 +228,8 @@ export default function Volunteer() {
   const activeSortLabel =
     SORT_OPTIONS.find((o) => o.key === sort)?.label || 'Soonest'
 
+  const listToRender = calendarDay ? calendarDay : filtered
+
   return (
     <div className="container">
       <Confetti trigger={confettiKey} />
@@ -253,7 +242,6 @@ export default function Volunteer() {
         </p>
       </div>
 
-      {/* ---------- TOOLBAR ---------- */}
       <div className="donate-toolbar">
         <div className="search">
           <span className="search-icon">
@@ -276,7 +264,6 @@ export default function Volunteer() {
             <span className="sort-value">{activeSortLabel}</span>
             <Icon name="chevron-down" size={14} />
           </button>
-
           {sortOpen && (
             <>
               <div
@@ -298,11 +285,7 @@ export default function Volunteer() {
                   >
                     {opt.label}
                     {sort === opt.key && (
-                      <Icon
-                        name="check"
-                        size={14}
-                        color="var(--blue-700)"
-                      />
+                      <Icon name="check" size={14} color="var(--blue-700)" />
                     )}
                   </button>
                 ))}
@@ -314,7 +297,10 @@ export default function Volunteer() {
         <div className="view-toggle">
           <button
             className={`view-btn ${view === 'grid' ? 'active' : ''}`}
-            onClick={() => setView('grid')}
+            onClick={() => {
+              setView('grid')
+              setCalendarDay(null)
+            }}
             title="Grid view"
             type="button"
           >
@@ -322,16 +308,26 @@ export default function Volunteer() {
           </button>
           <button
             className={`view-btn ${view === 'list' ? 'active' : ''}`}
-            onClick={() => setView('list')}
+            onClick={() => {
+              setView('list')
+              setCalendarDay(null)
+            }}
             title="List view"
             type="button"
           >
             <Icon name="list" size={16} />
           </button>
+          <button
+            className={`view-btn ${view === 'calendar' ? 'active' : ''}`}
+            onClick={() => setView('calendar')}
+            title="Calendar view"
+            type="button"
+          >
+            <Icon name="calendar" size={16} />
+          </button>
         </div>
       </div>
 
-      {/* ---------- DATE FILTER PILLS ---------- */}
       <div className="filters">
         {[
           { key: 'nearby', label: 'Nearby' },
@@ -349,18 +345,18 @@ export default function Volunteer() {
         ))}
       </div>
 
-      {/* ---------- RESULTS ---------- */}
       <div className="donate-results">
         <span>
-          {filtered.length}{' '}
-          {filtered.length === 1 ? 'opportunity' : 'opportunities'} found
+          {listToRender.length}{' '}
+          {listToRender.length === 1 ? 'opportunity' : 'opportunities'} found
         </span>
-        {(search || tab !== 'nearby') && (
+        {(search || tab !== 'nearby' || calendarDay) && (
           <button
             className="donate-clear"
             onClick={() => {
               setSearch('')
               setTab('nearby')
+              setCalendarDay(null)
             }}
             type="button"
           >
@@ -369,21 +365,35 @@ export default function Volunteer() {
         )}
       </div>
 
-      {/* ---------- MAIN + SIDEBAR ---------- */}
       <div className="volunteer-layout">
-        {/* LEFT — OPPORTUNITIES */}
         <div className="volunteer-main">
-          {filtered.length === 0 ? (
+          {view === 'calendar' ? (
+            <VolunteerCalendar
+              events={filtered}
+              onDayClick={(events) => setCalendarDay(events)}
+            />
+          ) : listToRender.length === 0 ? (
             <EmptyState
               icon="search"
               title="No opportunities match"
               message="Try a different search or filter."
+              suggestions={[
+                { label: 'Clear filters', onClick: () => {
+                  setSearch('')
+                  setTab('nearby')
+                  setCalendarDay(null)
+                }, icon: 'x' },
+                { label: 'See all locations', onClick: () => {
+                  setTab('all')
+                  setSearch('')
+                }, icon: 'globe' },
+              ]}
             />
           ) : (
             <div
               className={view === 'grid' ? 'grid grid-2' : 'volunteer-list'}
             >
-              {filtered.map((o) => {
+              {listToRender.map((o) => {
                 const ngo = getNgo(o.ngoId)
                 const signed = isSignedUp(o.id)
                 const cancelled = isCancelled(o.id)
@@ -420,7 +430,6 @@ export default function Volunteer() {
                       >
                         {o.title}
                       </div>
-
                       <div
                         className="row text-muted"
                         style={{
@@ -443,7 +452,6 @@ export default function Volunteer() {
                           {o.date}
                         </span>
                       </div>
-
                       <p
                         style={{
                           fontSize: 14,
@@ -528,9 +536,7 @@ export default function Volunteer() {
           )}
         </div>
 
-        {/* RIGHT — SIDEBAR */}
         <aside className="volunteer-sidebar">
-          {/* 1. YOUR UPCOMING EVENTS */}
           <div className="sidebar-card">
             <div className="sidebar-card-header">
               <h3 className="sidebar-card-title">Your upcoming events</h3>
@@ -575,7 +581,6 @@ export default function Volunteer() {
             )}
           </div>
 
-          {/* 2. LIVE SIGNUPS TICKER */}
           <div className="sidebar-card">
             <div className="sidebar-card-header">
               <h3 className="sidebar-card-title">
@@ -595,9 +600,7 @@ export default function Volunteer() {
                   <div className="live-ticker-campaign">
                     {currentTicker.event}
                   </div>
-                  <div className="live-ticker-time">
-                    {currentTicker.ago}
-                  </div>
+                  <div className="live-ticker-time">{currentTicker.ago}</div>
                 </div>
               </div>
               <div className="live-ticker-dots">
@@ -613,7 +616,6 @@ export default function Volunteer() {
             </div>
           </div>
 
-          {/* 3. CATEGORIES NEEDING VOLUNTEERS */}
           <div className="sidebar-card">
             <div className="sidebar-card-header">
               <h3 className="sidebar-card-title">Needs volunteers</h3>
@@ -656,16 +658,12 @@ export default function Volunteer() {
             </div>
           </div>
 
-          {/* 4. NGO SPOTLIGHT */}
           {spotlightNgo && (
             <div className="sidebar-card">
               <div className="sidebar-card-header">
                 <h3 className="sidebar-card-title">Needs you most</h3>
               </div>
-              <Link
-                to={`/ngo/${spotlightNgo.id}`}
-                className="featured-ngo"
-              >
+              <Link to={`/ngo/${spotlightNgo.id}`} className="featured-ngo">
                 <div className="featured-ngo-cover">
                   <img src={spotlightNgo.cover} alt="" />
                   <div className="featured-ngo-overlay" />
@@ -700,7 +698,6 @@ export default function Volunteer() {
         </aside>
       </div>
 
-      {/* ---------- MODALS ---------- */}
       {detail && (
         <VolunteerDetailModal
           opportunity={detail}

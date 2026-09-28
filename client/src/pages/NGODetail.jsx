@@ -11,6 +11,7 @@ import StatusTag from '../components/StatusTag'
 import ProgressBar from '../components/ProgressBar'
 import EmptyState from '../components/EmptyState'
 import CommentSection from '../components/CommentSection'
+import MessageModal from '../components/MessageModal'
 import Icon from '../components/Icon'
 
 export default function NGODetail() {
@@ -18,6 +19,7 @@ export default function NGODetail() {
   const { user } = useAuth()
   const store = useActivity()
   const [tab, setTab] = useState('posts')
+  const [messageOpen, setMessageOpen] = useState(false)
 
   const ngo = NGOS.find((n) => n.id === id)
   if (!ngo) {
@@ -90,32 +92,38 @@ export default function NGODetail() {
                 {ngo.tagline}
               </p>
             </div>
-            {user && (
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button
-                  className={`btn ${following ? 'btn-ghost' : 'btn-primary'}`}
-                  onClick={() => store.toggleFollow(user.id, ngo.id)}
-                >
-                  {following ? 'Following' : 'Follow'}
-                </button>
-                {ngo.isDeep ? (
-                  <Link to="/donate" className="btn btn-accent">
-                    <Icon name="heart" size={14} /> Donate
-                  </Link>
-                ) : (
-                  <button
-                    className="btn btn-accent"
-                    onClick={() =>
-                      alert(
-                        'Demo NGO — campaigns not available in this prototype.\n\nTry Angat Buhay Foundation for a full demo.'
-                      )
-                    }
-                  >
-                    Donate
-                  </button>
-                )}
-              </div>
+        {user && (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button
+              className={`btn ${following ? 'btn-ghost' : 'btn-primary'}`}
+              onClick={() => store.toggleFollow(user.id, ngo.id)}
+            >
+              {following ? 'Following' : 'Follow'}
+            </button>
+            <button
+              className="btn btn-neutral"
+              onClick={() => setMessageOpen(true)}
+            >
+              <Icon name="message-circle" size={14} /> Message
+            </button>
+            {ngo.isDeep ? (
+              <Link to="/donate" className="btn btn-accent">
+                <Icon name="heart" size={14} /> Donate
+              </Link>
+            ) : (
+              <button
+                className="btn btn-accent"
+                onClick={() =>
+                  alert(
+                    'Demo NGO — campaigns not available in this prototype.\n\nTry Angat Buhay Foundation for a full demo.'
+                  )
+                }
+              >
+                Donate
+              </button>
             )}
+          </div>
+        )}
           </div>
 
           <p
@@ -299,6 +307,9 @@ export default function NGODetail() {
             ))}
           </div>
         ))}
+        {messageOpen && (
+  <MessageModal ngo={ngo} onClose={() => setMessageOpen(false)} />
+)}
     </div>
   )
 }

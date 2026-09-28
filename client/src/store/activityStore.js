@@ -15,6 +15,7 @@ const EMPTY = {
   volunteerIds: [],
   applications: [],
   shares: [],
+  messages: [],
 }
 
 /* =========================================================
@@ -607,4 +608,24 @@ export const activityStore = {
   getShareCount: (postId) =>
     state.shares.filter((s) => s.postId === postId).length,
   getShares: (postId) => state.shares.filter((s) => s.postId === postId),
+
+  /* messages */
+  getMessages: (userId, ngoId) =>
+    state.messages
+      .filter((m) => m.userId === userId && m.ngoId === ngoId)
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)),
+  sendMessage: (userId, ngoId, text, from = 'user') => {
+    if (!text || !text.trim()) return
+    state.messages.push({
+      id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      userId,
+      ngoId,
+      from,
+      text: text.trim(),
+      createdAt: new Date().toISOString(),
+    })
+    save(state)
+  },
+  getUnreadMessageCount: (userId) =>
+    state.messages.filter((m) => m.userId === userId && m.from === 'ngo').length,
 }
