@@ -118,7 +118,17 @@ export default function Discover() {
               return (
                 <article key={ngo.id} className="ngo-card">
                   <Link to={`/ngo/${ngo.id}`} className="ngo-card-cover">
-                    <img src={ngo.cover} alt="" />
+                    <img
+                      src={ngo.cover}
+                      alt=""
+                      className="ngo-card-cover-img"
+                      onError={(e) => {
+                        e.target.onerror = null
+                        e.target.src = `https://placehold.co/800x400/eff4ff/1e40d8?text=${encodeURIComponent(
+                          ngo.name
+                        )}`
+                      }}
+                    />
                     <div className="ngo-card-cover-overlay" />
                     {ngo.isDeep && (
                       <span className="ngo-card-featured">
@@ -180,13 +190,20 @@ export default function Discover() {
                       {user && (
                         <button
                           type="button"
-                          className={`btn ${following ? 'btn-ghost' : 'btn-primary'} ngo-card-cta`}
-                          onClick={() => store.toggleFollow(user.id, ngo.id)}
+                          className={`btn ${
+                            following ? 'btn-ghost' : 'btn-primary'
+                          } ngo-card-cta`}
+                          onClick={() =>
+                            store.toggleFollow(user.id, ngo.id)
+                          }
                         >
                           {following ? 'Following' : 'Follow'}
                         </button>
                       )}
-                      <Link to={`/ngo/${ngo.id}`} className="ngo-card-view ngo-card-cta">
+                      <Link
+                        to={`/ngo/${ngo.id}`}
+                        className="ngo-card-view ngo-card-cta"
+                      >
                         View profile <Icon name="arrow-right" size={13} />
                       </Link>
                     </div>
