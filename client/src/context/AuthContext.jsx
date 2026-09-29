@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState } from 'react'
 import { HARDCODED_ACCOUNTS } from '../data/users'
 
@@ -10,7 +11,9 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const raw = localStorage.getItem(KEY)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (raw) setUser(JSON.parse(raw))
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(false)
   }, [])
 
@@ -29,15 +32,15 @@ export function AuthProvider({ children }) {
     return match
   }
 
-  async function signUp({ name, email, password, role }) {
+  async function signUp({ name, email, role }) {
     if (HARDCODED_ACCOUNTS.some((u) => u.email === email)) {
       throw new Error('This email is already registered.')
     }
     const demoUser = {
-      id: 'u-demo-' + Date.now(),
-      name: name,
-      email: email,
-      role: role,
+      id: `u-demo-${Date.now()}`,
+      name,
+      email,
+      role,
       ngoId: null,
       isDemo: true,
     }

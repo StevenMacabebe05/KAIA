@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { NGOS } from '../data/ngos'
 import { CAMPAIGNS } from '../data/campaigns'
@@ -10,14 +10,35 @@ import VerifiedBadge from '../components/VerifiedBadge'
 import StatusTag from '../components/StatusTag'
 import ProgressBar from '../components/ProgressBar'
 import EmptyState from '../components/EmptyState'
-import CommentSection from '../components/CommentSection'
+import MessageModal from '../components/MessageModal'
+import FeedPost from '../components/FeedPost'
+import ImpactTab from '../components/ImpactTab'
+import FinancialReport from '../components/FinancialReport'
 import Icon from '../components/Icon'
+
+const TABS = [
+  { key: 'posts', label: 'Posts' },
+  { key: 'campaigns', label: 'Campaigns' },
+  { key: 'volunteer', label: 'Volunteer' },
+  { key: 'impact', label: 'Impact' },
+  { key: 'financials', label: 'Financials' },
+]
 
 export default function NGODetail() {
   const { id } = useParams()
   const { user } = useAuth()
   const store = useActivity()
   const [tab, setTab] = useState('posts')
+  const [messageOpen, setMessageOpen] = useState(false)
+  const tabsRef = useRef(null)
+
+  useEffect(() => {
+    if (tabsRef.current) {
+      const top =
+        tabsRef.current.getBoundingClientRect().top + window.scrollY - 80
+      window.scrollTo({ top, behavior: 'smooth' })
+    }
+  }, [tab])
 
   const ngo = NGOS.find((n) => n.id === id)
   if (!ngo) {
@@ -91,12 +112,20 @@ export default function NGODetail() {
               </p>
             </div>
             {user && (
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div
+                style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}
+              >
                 <button
                   className={`btn ${following ? 'btn-ghost' : 'btn-primary'}`}
                   onClick={() => store.toggleFollow(user.id, ngo.id)}
                 >
                   {following ? 'Following' : 'Follow'}
+                </button>
+                <button
+                  className="btn btn-neutral"
+                  onClick={() => setMessageOpen(true)}
+                >
+                  <Icon name="message-circle" size={14} /> Message
                 </button>
                 {ngo.isDeep ? (
                   <Link to="/donate" className="btn btn-accent">
@@ -152,16 +181,13 @@ export default function NGODetail() {
         </div>
       </div>
 
-      <div className="tabs">
-        {[
-          { key: 'posts', label: 'Posts' },
-          { key: 'campaigns', label: 'Campaigns' },
-          { key: 'volunteer', label: 'Volunteer' },
-        ].map((t) => (
+      <div className="tabs tabs-sticky" ref={tabsRef}>
+        {TABS.map((t) => (
           <button
             key={t.key}
             className={`tab ${tab === t.key ? 'active' : ''}`}
             onClick={() => setTab(t.key)}
+            type="button"
           >
             {t.label}
           </button>
@@ -176,31 +202,14 @@ export default function NGODetail() {
             message="This NGO hasn't posted anything."
           />
         ) : (
-          <div className="grid" style={{ gap: 20 }}>
+          <div className="home-feed-list">
             {posts.map((p) => (
-              <div className="card" key={p.id}>
-                <p
-                  style={{
-                    margin: '0 0 12px',
-                    fontSize: 15,
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {p.content}
-                </p>
-                {p.image && (
-                  <img
-                    src={p.image}
-                    alt=""
-                    style={{
-                      width: '100%',
-                      borderRadius: 10,
-                      marginBottom: 12,
-                    }}
-                  />
-                )}
-                <CommentSection postId={p.id} />
-              </div>
+              <FeedPost
+                key={p.id}
+                post={p}
+                ngo={ngo}
+                showNgoHeader={true}
+              />
             ))}
           </div>
         ))}
@@ -291,7 +300,10 @@ export default function NGODetail() {
                   <span className="text-muted" style={{ fontSize: 13 }}>
                     {o.needed - o.registered} slots left
                   </span>
-                  <Link to="/volunteer" className="btn btn-primary btn-sm">
+                  <Link
+                    to="/volunteer"
+                    className="btn btn-primary btn-sm"
+                  >
                     Volunteer
                   </Link>
                 </div>
@@ -299,6 +311,16 @@ export default function NGODetail() {
             ))}
           </div>
         ))}
+
+      {tab === 'impact' && (
+        <ImpactTab ngoId={ngo.id} ngoName={ngo.name} />
+      )}
+
+      {tab === 'financials' && <FinancialReport ngoId={ngo.id} />}
+
+      {messageOpen && (
+        <MessageModal ngo={ngo} onClose={() => setMessageOpen(false)} />
+      )}
     </div>
   )
 }

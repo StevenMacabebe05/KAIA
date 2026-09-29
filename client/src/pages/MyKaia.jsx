@@ -6,6 +6,7 @@ import { OPPORTUNITIES } from '../data/opportunities'
 import { NGOS } from '../data/ngos'
 import { ACHIEVEMENTS } from '../data/achievements'
 import Icon from '../components/Icon'
+import AnimatedCounter from '../components/AnimatedCounter'
 import ProgressBar from '../components/ProgressBar'
 import {
   ActivityAreaChart,
@@ -26,16 +27,28 @@ export default function MyKaia() {
   const { user, logOut } = useAuth()
   const store = useActivity()
   const navigate = useNavigate()
+
   if (!user) return null
 
-  const donations = store.getDonations(user.id)
-  const signups = store.getSignups(user.id)
+  const donations = [...store.getDonations(user.id)].sort(
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+  )
+  const signups = [...store.getSignups(user.id)].sort(
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+  )
   const follows = store.getFollowedNgoIds(user.id)
   const saves = store.getSaved(user.id)
+
   const hours = signups
-    .filter((s) => s.status === 'completed')
-    .reduce((sum, s) => sum + (s.hours || 0), 0)
+    .filter((s) => s.status === 'completed' || s.status === 'attended')
+    .reduce((sum, s) => sum + (s.hours || 4), 0)
+
   const totalDonated = donations.reduce((s, d) => s + d.amount, 0)
+
+  function findReceipt(donation) {
+    const all = store.getState().receipts || []
+    return all.find((r) => r.ref === donation.ref)
+  }
 
   const categoryMap = {}
   donations.forEach((d) => {
@@ -43,10 +56,9 @@ export default function MyKaia() {
     const cat = c?.category ?? 'Other'
     categoryMap[cat] = (categoryMap[cat] || 0) + d.amount
   })
-  const categoryDonutData = Object.entries(categoryMap).map(([name, value]) => ({
-    name,
-    value,
-  }))
+  const categoryDonutData = Object.entries(categoryMap).map(
+    ([name, value]) => ({ name, value })
+  )
 
   const donationSpark = IMPACT_HISTORY.map((d) => d.donations)
   const volunteerSpark = IMPACT_HISTORY.map((d) => d.volunteers)
@@ -62,6 +74,7 @@ export default function MyKaia() {
 
   return (
     <div className="container">
+      {/* ---------- user card ---------- */}
       <div className="card" style={{ padding: 28, marginBottom: 24 }}>
         <div className="row" style={{ gap: 18, flexWrap: 'wrap' }}>
           <div className="avatar avatar-lg">
@@ -78,7 +91,10 @@ export default function MyKaia() {
             >
               {user.name}
             </h1>
-            <div className="text-muted" style={{ fontSize: 14, marginTop: 2 }}>
+            <div
+              className="text-muted"
+              style={{ fontSize: 14, marginTop: 2 }}
+            >
               {user.email}
             </div>
           </div>
@@ -88,13 +104,13 @@ export default function MyKaia() {
         </div>
       </div>
 
-      {/* Stat cards */}
+      {/* ---------- stat cards ---------- */}
       <div className="stat-row" style={{ marginBottom: 24 }}>
         <div className="stat-card-rich">
           <div className="stat-rich-top">
             <div>
               <div className="stat-rich-value">
-                ₱{totalDonated.toLocaleString()}
+                ₱<AnimatedCounter value={totalDonated} />
               </div>
               <div className="stat-rich-label">Total donated</div>
             </div>
@@ -110,7 +126,9 @@ export default function MyKaia() {
         <div className="stat-card-rich">
           <div className="stat-rich-top">
             <div>
-              <div className="stat-rich-value">{hours}</div>
+              <div className="stat-rich-value">
+                <AnimatedCounter value={hours} />
+              </div>
               <div className="stat-rich-label">Hours volunteered</div>
             </div>
             <Sparkline data={volunteerSpark} color="#f97316" />
@@ -125,7 +143,9 @@ export default function MyKaia() {
         <div className="stat-card-rich">
           <div className="stat-rich-top">
             <div>
-              <div className="stat-rich-value">{follows.length}</div>
+              <div className="stat-rich-value">
+                <AnimatedCounter value={follows.length} />
+              </div>
               <div className="stat-rich-label">NGOs followed</div>
             </div>
             <Sparkline
@@ -139,7 +159,9 @@ export default function MyKaia() {
         <div className="stat-card-rich">
           <div className="stat-rich-top">
             <div>
-              <div className="stat-rich-value">{saves.length}</div>
+              <div className="stat-rich-value">
+                <AnimatedCounter value={saves.length} />
+              </div>
               <div className="stat-rich-label">Saved causes</div>
             </div>
             <Sparkline
@@ -151,7 +173,7 @@ export default function MyKaia() {
         </div>
       </div>
 
-      {/* Saved campaigns */}
+      {/* ---------- saved campaigns ---------- */}
       <div className="chart-card" style={{ marginBottom: 20 }}>
         <div className="chart-card-header">
           <div>
@@ -201,7 +223,7 @@ export default function MyKaia() {
         )}
       </div>
 
-      {/* Achievements */}
+      {/* ---------- achievements ---------- */}
       <div className="chart-card" style={{ marginBottom: 20 }}>
         <div className="chart-card-header">
           <div>
@@ -211,7 +233,8 @@ export default function MyKaia() {
             </p>
           </div>
           <span className="chart-badge orange">
-            {Math.round((unlockedCount / ACHIEVEMENTS.length) * 100)}% complete
+            {Math.round((unlockedCount / ACHIEVEMENTS.length) * 100)}%
+            complete
           </span>
         </div>
 
@@ -221,7 +244,9 @@ export default function MyKaia() {
             return (
               <div
                 key={a.id}
-                className={`achievement ${unlocked ? 'unlocked' : 'locked'}`}
+                className={`achievement ${
+                  unlocked ? 'unlocked' : 'locked'
+                }`}
               >
                 <div className="achievement-icon">
                   <Icon name={a.icon} size={20} />
@@ -234,7 +259,7 @@ export default function MyKaia() {
         </div>
       </div>
 
-      {/* Impact over time */}
+      {/* ---------- impact over time ---------- */}
       <div className="chart-card" style={{ marginBottom: 20 }}>
         <div className="chart-card-header">
           <div>
@@ -248,7 +273,7 @@ export default function MyKaia() {
         <ActivityAreaChart data={IMPACT_HISTORY} />
       </div>
 
-      {/* Category donut + Following */}
+      {/* ---------- category donut + following ---------- */}
       <div className="chart-grid">
         <div className="chart-card">
           <div className="chart-card-header">
@@ -318,7 +343,7 @@ export default function MyKaia() {
         </div>
       </div>
 
-      {/* Recent activity */}
+      {/* ---------- recent activity ---------- */}
       <div className="chart-grid-2" style={{ marginTop: 20 }}>
         <div className="chart-card">
           <div className="chart-card-header">
@@ -331,32 +356,52 @@ export default function MyKaia() {
             </p>
           ) : (
             <div className="stack" style={{ gap: 4 }}>
-              {donations.slice(0, 5).map((d, i) => {
+              {donations.slice(0, 5).map((d) => {
                 const c = CAMPAIGNS.find((x) => x.id === d.campaignId)
-                return (
-                  <div
-                    key={i}
-                    className="row-between"
-                    style={{
-                      padding: '10px 0',
-                      borderBottom:
-                        i < Math.min(donations.length, 5) - 1
-                          ? '1px solid var(--ink-100)'
-                          : 'none',
-                    }}
-                  >
+                const receipt = findReceipt(d)
+                const row = (
+                  <div className="row-between" style={{ padding: '10px 0' }}>
                     <div>
                       <div style={{ fontWeight: 600, fontSize: 14 }}>
                         {c?.title ?? 'a campaign'}
                       </div>
-                      <div className="text-muted" style={{ fontSize: 12 }}>
-                        {new Date(d.createdAt).toLocaleDateString()}
+                      <div
+                        className="text-muted"
+                        style={{ fontSize: 12 }}
+                      >
+                        {new Date(d.createdAt).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        })}
                       </div>
                     </div>
-                    <strong style={{ color: 'var(--blue-700)' }}>
-                      ₱{d.amount.toLocaleString()}
-                    </strong>
+                    <div className="row" style={{ gap: 8 }}>
+                      <strong style={{ color: 'var(--blue-700)' }}>
+                        ₱{d.amount.toLocaleString()}
+                      </strong>
+                      {receipt && (
+                        <Icon
+                          name="chevron-right"
+                          size={14}
+                          color="var(--ink-500)"
+                        />
+                      )}
+                    </div>
                   </div>
+                )
+                return receipt ? (
+                  <Link
+                    key={d.ref || d.createdAt}
+                    to={`/receipt/${receipt.id}`}
+                    style={{ color: 'inherit', display: 'block' }}
+                  >
+                    {row}
+                  </Link>
+                ) : (
+                  <div key={d.ref || d.createdAt}>{row}</div>
                 )
               })}
             </div>
@@ -365,7 +410,7 @@ export default function MyKaia() {
 
         <div className="chart-card">
           <div className="chart-card-header">
-            <h3 className="chart-title">Volunteer signups</h3>
+            <h3 className="chart-title">Volunteer history</h3>
             <span className="chart-subtitle">{signups.length} total</span>
           </div>
           {signups.length === 0 ? (
@@ -374,22 +419,29 @@ export default function MyKaia() {
             </p>
           ) : (
             <div className="stack" style={{ gap: 4 }}>
-              {signups.slice(0, 5).map((s, i) => {
-                const o = OPPORTUNITIES.find((x) => x.id === s.opportunityId)
+              {signups.slice(0, 5).map((s) => {
+                const o = OPPORTUNITIES.find(
+                  (x) => x.id === s.opportunityId
+                )
+                const isCancelled = s.status === 'cancelled'
+                const attended = s.status === 'attended'
                 return (
                   <div
-                    key={i}
+                    key={s.createdAt}
                     className="row-between"
-                    style={{
-                      padding: '10px 0',
-                      borderBottom:
-                        i < Math.min(signups.length, 5) - 1
-                          ? '1px solid var(--ink-100)'
-                          : 'none',
-                    }}
+                    style={{ padding: '10px 0' }}
                   >
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: 14 }}>
+                      <div
+                        style={{
+                          fontWeight: 600,
+                          fontSize: 14,
+                          textDecoration: isCancelled
+                            ? 'line-through'
+                            : 'none',
+                          opacity: isCancelled ? 0.6 : 1,
+                        }}
+                      >
                         {o?.title ?? 'Opportunity'}
                       </div>
                       <div
@@ -399,10 +451,41 @@ export default function MyKaia() {
                           textTransform: 'capitalize',
                         }}
                       >
-                        {s.status}
+                        {s.status} ·{' '}
+                        {new Date(s.createdAt).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
                       </div>
                     </div>
-                    <Icon name="check" size={16} color="var(--green-600)" />
+                    {isCancelled ? (
+                      <span
+                        className="badge"
+                        style={{
+                          background: '#fee2e2',
+                          color: 'var(--red-600)',
+                        }}
+                      >
+                        Cancelled
+                      </span>
+                    ) : attended ? (
+                      <span
+                        className="badge"
+                        style={{
+                          background: '#dcfce7',
+                          color: '#15803d',
+                        }}
+                      >
+                        ✓
+                      </span>
+                    ) : (
+                      <Icon
+                        name="check"
+                        size={16}
+                        color="var(--green-600)"
+                      />
+                    )}
                   </div>
                 )
               })}

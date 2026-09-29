@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { NGOS } from '../data/ngos'
 import { CATEGORIES } from '../data/categories'
+import { CAMPAIGNS } from '../data/campaigns'
+import { POSTS } from '../data/posts'
 import { useActivity } from '../store/useActivity'
 import { useAuth } from '../context/AuthContext'
 import VerifiedBadge from '../components/VerifiedBadge'
@@ -15,7 +17,8 @@ export default function Discover() {
   const [query, setQuery] = useState('')
 
   const filtered = NGOS.filter((n) => {
-    const matchesCategory = category === 'All' || n.categories.includes(category)
+    const matchesCategory =
+      category === 'All' || n.categories.includes(category)
     const matchesQuery =
       query === '' || n.name.toLowerCase().includes(query.toLowerCase())
     return matchesCategory && matchesQuery
@@ -26,7 +29,8 @@ export default function Discover() {
       <div className="page-header">
         <h1 className="page-title">Discover NGOs</h1>
         <p className="page-subtitle">
-          Browse verified organizations across nine cause categories.
+          Find organizations and causes to follow, support, and stay
+          connected with.
         </p>
       </div>
 
@@ -36,7 +40,7 @@ export default function Discover() {
             <Icon name="search" size={16} />
           </span>
           <input
-            placeholder="Search by name…"
+            placeholder="Search NGOs by name…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -47,6 +51,7 @@ export default function Discover() {
         <button
           className={`pill ${category === 'All' ? 'is-active' : ''}`}
           onClick={() => setCategory('All')}
+          type="button"
         >
           All
         </button>
@@ -55,6 +60,7 @@ export default function Discover() {
             key={c}
             className={`pill ${category === c ? 'is-active' : ''}`}
             onClick={() => setCategory(c)}
+            type="button"
           >
             {c}
           </button>
@@ -65,97 +71,148 @@ export default function Discover() {
         <EmptyState
           icon="search"
           title="No NGOs found"
-          message="Try a different category or search term."
+          message="Try a different search or explore another cause category."
+          suggestions={[
+            {
+              label: 'Clear search & filters',
+              onClick: () => {
+                setQuery('')
+                setCategory('All')
+              },
+              icon: 'x',
+            },
+            { label: 'Browse campaigns', to: '/donate', icon: 'heart' },
+            { label: 'Find volunteer work', to: '/volunteer', icon: 'hand' },
+          ]}
         />
       ) : (
-        <div className="grid grid-3">
-          {filtered.map((ngo) => {
-            const following = user ? store.isFollowing(user.id, ngo.id) : false
+        <>
+          <div className="donate-results">
+            <span>
+              {query || category !== 'All'
+                ? `${filtered.length} ${
+                    filtered.length === 1 ? 'NGO' : 'NGOs'
+                  } found`
+                : 'Explore organizations you may want to follow'}
+            </span>
+            {(query || category !== 'All') && (
+              <button
+                className="donate-clear"
+                onClick={() => {
+                  setQuery('')
+                  setCategory('All')
+                }}
+                type="button"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
 
-            return (
-              <article key={ngo.id} className="card card-hover">
-                <Link
-                  to={`/ngo/${ngo.id}`}
-                  style={{ color: 'inherit', display: 'block' }}
-                >
-                  {/* Cover strip */}
-                  <img
-                    src={ngo.cover}
-                    alt=""
-                    style={{
-                      width: '100%',
-                      height: 100,
-                      borderRadius: 10,
-                      objectFit: 'cover',
-                      marginBottom: -22,
-                    }}
-                  />
+          <div className="grid grid-3">
+            {filtered.map((ngo) => {
+              const following = user
+                ? store.isFollowing(user.id, ngo.id)
+                : false
 
-                  {/* Logo overlapping the cover */}
-                  <img
-                    src={ngo.logo}
-                    alt={ngo.name}
-                    style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 14,
-                      objectFit: 'cover',
-                      border: '3px solid white',
-                      background: 'white',
-                      boxShadow: '0 2px 6px rgba(11,18,32,0.08)',
-                      position: 'relative',
-                      marginBottom: 10,
-                    }}
-                  />
+              return (
+                <article key={ngo.id} className="ngo-card">
+                  <Link to={`/ngo/${ngo.id}`} className="ngo-card-cover">
+                    <img
+                      src={ngo.cover}
+                      alt=""
+                      className="ngo-card-cover-img"
+                      onError={(e) => {
+                        e.target.onerror = null
+                        e.target.src = `https://placehold.co/800x400/eff4ff/1e40d8?text=${encodeURIComponent(
+                          ngo.name
+                        )}`
+                      }}
+                    />
+                    <div className="ngo-card-cover-overlay" />
+                    {ngo.isDeep && (
+                      <span className="ngo-card-featured">
+                        <Icon name="trending" size={11} /> Featured
+                      </span>
+                    )}
+                  </Link>
 
-                  {/* Name + categories */}
-                  <div
-                    style={{
-                      fontWeight: 700,
-                      fontSize: 15,
-                      marginBottom: 4,
-                      lineHeight: 1.3,
-                    }}
-                  >
-                    {ngo.name}
+                  <div className="ngo-card-body">
+                    <div className="ngo-card-logo-row">
+                      <Link to={`/ngo/${ngo.id}`}>
+                        <img
+                          src={ngo.logo}
+                          alt=""
+                          className="ngo-card-logo"
+                        />
+                      </Link>
+                      <VerifiedBadge verified={ngo.verified} />
+                    </div>
+
+                    <Link to={`/ngo/${ngo.id}`} className="ngo-card-name">
+                      {ngo.name}
+                    </Link>
+
+                    <div className="ngo-card-cats">
+                      {ngo.categories.map((c) => (
+                        <span key={c} className="ngo-card-cat">
+                          {c}
+                        </span>
+                      ))}
+                    </div>
+
+                    <p className="ngo-card-tagline">{ngo.tagline}</p>
+
+                    <div className="ngo-card-stats">
+                      <div className="ngo-card-stat">
+                        <div className="ngo-card-stat-value">
+                          {ngo.supporterCount > 999
+                            ? `${(ngo.supporterCount / 1000).toFixed(1)}k`
+                            : ngo.supporterCount}
+                        </div>
+                        <div className="ngo-card-stat-label">Supporters</div>
+                      </div>
+                      <div className="ngo-card-stat">
+                        <div className="ngo-card-stat-value">
+                          {CAMPAIGNS.filter((c) => c.ngoId === ngo.id).length}
+                        </div>
+                        <div className="ngo-card-stat-label">Campaigns</div>
+                      </div>
+                      <div className="ngo-card-stat">
+                        <div className="ngo-card-stat-value">
+                          {POSTS.filter((p) => p.ngoId === ngo.id).length}
+                        </div>
+                        <div className="ngo-card-stat-label">Posts</div>
+                      </div>
+                    </div>
+
+                    <div className="ngo-card-cta-row">
+                      {user && (
+                        <button
+                          type="button"
+                          className={`btn ${
+                            following ? 'btn-ghost' : 'btn-primary'
+                          } ngo-card-cta`}
+                          onClick={() =>
+                            store.toggleFollow(user.id, ngo.id)
+                          }
+                        >
+                          {following ? 'Following' : 'Follow'}
+                        </button>
+                      )}
+                      <Link
+                        to={`/ngo/${ngo.id}`}
+                        className="ngo-card-view ngo-card-cta"
+                      >
+                        View profile <Icon name="arrow-right" size={13} />
+                      </Link>
+                    </div>
                   </div>
-                  <div
-                    className="text-muted"
-                    style={{ fontSize: 12, marginBottom: 8 }}
-                  >
-                    {ngo.categories.join(' · ')}
-                  </div>
-
-                  {/* Tagline */}
-                  <p
-                    style={{
-                      fontSize: 13,
-                      color: 'var(--ink-500)',
-                      margin: '0 0 12px',
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    {ngo.tagline}
-                  </p>
-                </Link>
-
-                <div className="row-between">
-                  <VerifiedBadge verified={ngo.verified} />
-                  {user && (
-                    <button
-                      className={`btn btn-sm ${
-                        following ? 'btn-ghost' : 'btn-primary'
-                      }`}
-                      onClick={() => store.toggleFollow(user.id, ngo.id)}
-                    >
-                      {following ? 'Following' : 'Follow'}
-                    </button>
-                  )}
-                </div>
-              </article>
-            )
-          })}
-        </div>
+                </article>
+              )
+            })}
+          </div>
+        </>
       )}
     </div>
   )

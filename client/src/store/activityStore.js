@@ -11,7 +11,19 @@ const EMPTY = {
   notifications: [],
   comments: [],
   receipts: [],
+  checkins: [],
+  volunteerIds: [],
+  applications: [],
+  shares: [],
+  messages: [],
 }
+
+/* =========================================================
+   SEED DATA
+   ========================================================= */
+
+const now = Date.now()
+const days = (n) => new Date(now - n * 24 * 60 * 60 * 1000).toISOString()
 
 const SEED_NOTIFICATIONS = [
   {
@@ -22,60 +34,193 @@ const SEED_NOTIFICATIONS = [
     body: 'Discover NGOs, donate, volunteer, and track your impact in one place.',
     link: '/discover',
     read: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-  },
-  {
-    id: 'seed-n-2',
-    userId: 'u-1',
-    type: 'follow',
-    title: 'You followed Angat Buhay Foundation',
-    body: 'Their posts will now appear in your Home feed.',
-    link: '/ngo/ngo-1',
-    read: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
+    createdAt: days(0.5),
   },
 ]
 
 const SEED_COMMENTS = [
   {
     id: 'sc-1',
-    postId: 'p-1',
-    userId: 'u-1',
-    userName: 'Demo Supporter',
-    text: 'So inspiring! Just donated to this campaign.',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+    postId: 'p-call',
+    userId: 'u-fake-1',
+    userName: 'Maria Santos',
+    text: 'Count me in! Will bring 3 friends from our org 💪',
+    createdAt: days(0.1),
+  },
+  {
+    id: 'sc-2',
+    postId: 'p-call',
+    userId: 'u-fake-2',
+    userName: 'Jose Reyes',
+    text: 'Just registered. See you all at Ateneo this afternoon!',
+    createdAt: days(0.2),
+  },
+  {
+    id: 'sc-3',
+    postId: 'p-paws',
+    userId: 'u-fake-3',
+    userName: 'Andrea Cruz',
+    text: 'Donated 100 points! Happy to help the kapon program 💚',
+    createdAt: days(0.1),
   },
 ]
+
+const SEED_FOLLOWS = [
+  { userId: 'u-1', ngoId: 'ngo-1' },
+  { userId: 'u-1', ngoId: 'ngo-3' },
+  { userId: 'u-1', ngoId: 'ngo-4' },
+]
+
+const SEED_SIGNUPS = []
+const SEED_VOLUNTEER_IDS = []
+const SEED_APPLICATIONS = []
+
+const SEED_FAKE_SIGNUPS = [
+  {
+    userId: 'u-fake-1',
+    opportunityId: 'vol-1',
+    hours: 0,
+    status: 'registered',
+    createdAt: days(3),
+  },
+  {
+    userId: 'u-fake-2',
+    opportunityId: 'vol-2',
+    hours: 0,
+    status: 'registered',
+    createdAt: days(2),
+  },
+  {
+    userId: 'u-fake-3',
+    opportunityId: 'vol-1',
+    hours: 0,
+    status: 'registered',
+    createdAt: days(1),
+  },
+]
+
+const SEED_SHARES = [
+  { id: 'sh-1', postId: 'p-call', userId: 'u-fake-1', sharedAt: days(0.05) },
+  { id: 'sh-2', postId: 'p-call', userId: 'u-fake-2', sharedAt: days(0.08) },
+  { id: 'sh-3', postId: 'p-call', userId: 'u-fake-3', sharedAt: days(0.1) },
+  { id: 'sh-4', postId: 'p-paws', userId: 'u-fake-1', sharedAt: days(0.04) },
+  { id: 'sh-5', postId: 'p-paws', userId: 'u-fake-2', sharedAt: days(0.06) },
+]
+
+const SEED_FAKE_APPLICATIONS = [
+  {
+    id: 'seed-app-1',
+    userId: 'u-fake-1',
+    opportunityId: 'vol-1',
+    name: 'Maria Santos',
+    age: 25,
+    email: 'maria.santos@example.com',
+    phone: '+63 918 234 5678',
+    address: 'Makati City, Metro Manila',
+    emergencyName: 'Pedro Santos',
+    emergencyPhone: '+63 918 876 5432',
+    skills: 'Logistics, warehouse work',
+    availability: ['Weekday evenings', 'Weekend mornings'],
+    submittedAt: days(3),
+  },
+  {
+    id: 'seed-app-2',
+    userId: 'u-fake-2',
+    opportunityId: 'vol-2',
+    name: 'Jose Reyes',
+    age: 30,
+    email: 'jose.reyes@example.com',
+    phone: '+63 919 345 6789',
+    address: 'Pasig City, Metro Manila',
+    emergencyName: 'Ana Reyes',
+    emergencyPhone: '+63 919 987 6543',
+    skills: 'Carpentry, painting',
+    availability: ['Weekend mornings', 'Weekend afternoons'],
+    submittedAt: days(2),
+  },
+  {
+    id: 'seed-app-3',
+    userId: 'u-fake-3',
+    opportunityId: 'vol-1',
+    name: 'Andrea Cruz',
+    age: 22,
+    email: 'andrea.cruz@example.com',
+    phone: '+63 920 456 7890',
+    address: 'Quezon City, Metro Manila',
+    emergencyName: 'Lito Cruz',
+    emergencyPhone: '+63 920 654 3210',
+    skills: 'Event coordination',
+    availability: ['Weekend mornings'],
+    submittedAt: days(1),
+  },
+]
+
+/* Seed NGO inbox — supporters who have already messaged Angat Buhay */
+const SEED_MESSAGES = [
+  {
+    id: 'seed-msg-1',
+    userId: 'u-fake-1',
+    ngoId: 'ngo-1',
+    from: 'user',
+    userName: 'Maria Santos',
+    text: 'Hi! I saw your call for volunteers. Do you still need people for the Feb 14 repacking?',
+    read: false,
+    createdAt: days(0.05),
+  },
+  {
+    id: 'seed-msg-2',
+    userId: 'u-fake-2',
+    ngoId: 'ngo-1',
+    from: 'user',
+    userName: 'Jose Reyes',
+    text: 'Is the community learning center build open to students?',
+    read: false,
+    createdAt: days(0.3),
+  },
+  {
+    id: 'seed-msg-3',
+    userId: 'u-fake-3',
+    ngoId: 'ngo-1',
+    from: 'user',
+    userName: 'Andrea Cruz',
+    text: 'Just donated ₱500 to the school kits campaign. Keep up the great work! 🙌',
+    read: true,
+    createdAt: days(1.2),
+  },
+  {
+    id: 'seed-msg-4',
+    userId: 'u-fake-1',
+    ngoId: 'ngo-3',
+    from: 'user',
+    userName: 'Maria Santos',
+    text: 'Can I bring my own dog to volunteer at the shelter?',
+    read: false,
+    createdAt: days(0.4),
+  },
+]
+
+function buildInitialState() {
+  return {
+    ...EMPTY,
+    follows: [...SEED_FOLLOWS],
+    signups: [...SEED_SIGNUPS, ...SEED_FAKE_SIGNUPS],
+    volunteerIds: [...SEED_VOLUNTEER_IDS],
+    applications: [...SEED_APPLICATIONS, ...SEED_FAKE_APPLICATIONS],
+    notifications: [...SEED_NOTIFICATIONS],
+    comments: [...SEED_COMMENTS],
+    shares: [...SEED_SHARES],
+    messages: [...SEED_MESSAGES],
+  }
+}
 
 function load() {
   try {
     const raw = localStorage.getItem(KEY)
-    if (!raw) {
-      return {
-        ...EMPTY,
-        notifications: [...SEED_NOTIFICATIONS],
-        comments: [...SEED_COMMENTS],
-      }
-    }
+    if (!raw) return buildInitialState()
     const parsed = JSON.parse(raw)
-    return {
-      ...EMPTY,
-      ...parsed,
-      notifications:
-        parsed.notifications && parsed.notifications.length > 0
-          ? parsed.notifications
-          : [...SEED_NOTIFICATIONS],
-      comments:
-        parsed.comments && parsed.comments.length > 0
-          ? parsed.comments
-          : [...SEED_COMMENTS],
-    }
+    return { ...EMPTY, ...parsed }
   } catch {
-    return {
-      ...EMPTY,
-      notifications: [...SEED_NOTIFICATIONS],
-      comments: [...SEED_COMMENTS],
-    }
+    return buildInitialState()
   }
 }
 
@@ -86,15 +231,20 @@ function save(state) {
 
 let state = load()
 
+function makeVolunteerCode() {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let code = 'KAIA-VOL-'
+  for (let i = 0; i < 8; i++) {
+    code += alphabet[Math.floor(Math.random() * alphabet.length)]
+  }
+  return code
+}
+
 export const activityStore = {
   getState: () => state,
 
   reset: () => {
-    state = {
-      ...EMPTY,
-      notifications: [...SEED_NOTIFICATIONS],
-      comments: [...SEED_COMMENTS],
-    }
+    state = buildInitialState()
     save(state)
   },
 
@@ -135,38 +285,223 @@ export const activityStore = {
     save(state)
     return receipt
   },
-  getDonations: (userId) => state.donations.filter((d) => d.userId === userId),
+  getDonations: (userId) =>
+    state.donations
+      .filter((d) => d.userId === userId)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
   getTotalDonated: (userId) =>
     state.donations
       .filter((d) => d.userId === userId)
       .reduce((sum, d) => sum + d.amount, 0),
   getReceipt: (id) => state.receipts.find((r) => r.id === id),
 
-  /* volunteer */
-  signUpForOpportunity: (userId, opportunityId, hours = 0) => {
-    const exists = state.signups.find(
+  /* volunteer signups */
+  signUpForOpportunity: (userId, opportunityId, applicationDetails = {}) => {
+    const existing = state.signups.find(
       (s) => s.userId === userId && s.opportunityId === opportunityId
     )
-    if (exists) return false
-    state.signups.push({
+    if (existing && existing.status !== 'cancelled') return null
+    if (existing && existing.status === 'cancelled') {
+      state.signups = state.signups.filter((s) => s !== existing)
+      state.volunteerIds = state.volunteerIds.filter(
+        (v) => !(v.userId === userId && v.opportunityId === opportunityId)
+      )
+    }
+
+    const signup = {
       userId,
       opportunityId,
-      hours,
+      hours: applicationDetails.hours || 0,
       status: 'registered',
       createdAt: new Date().toISOString(),
-    })
+    }
+    state.signups.push(signup)
+
+    if (applicationDetails.name) {
+      state.applications = state.applications.filter(
+        (a) => !(a.userId === userId && a.opportunityId === opportunityId)
+      )
+      state.applications.push({
+        id: 'app-' + Date.now(),
+        userId,
+        opportunityId,
+        name: applicationDetails.name,
+        age: applicationDetails.age,
+        email: applicationDetails.email || '',
+        phone: applicationDetails.phone,
+        address: applicationDetails.address,
+        emergencyName: applicationDetails.emergencyName,
+        emergencyPhone: applicationDetails.emergencyPhone,
+        skills: applicationDetails.skills || '',
+        availability: applicationDetails.availability || [],
+        submittedAt: new Date().toISOString(),
+      })
+    }
+
+    const volunteerId = {
+      id: 'vid-' + Date.now(),
+      code: makeVolunteerCode(),
+      userId,
+      opportunityId,
+      issuedAt: new Date().toISOString(),
+      revoked: false,
+    }
+    state.volunteerIds.push(volunteerId)
+
     save(state)
-    return true
+    return { signup, volunteerId }
   },
-  getSignups: (userId) => state.signups.filter((s) => s.userId === userId),
+
+  getSignups: (userId) =>
+    state.signups
+      .filter((s) => s.userId === userId)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
+
+  getActiveSignups: (userId) =>
+    state.signups.filter(
+      (s) => s.userId === userId && s.status !== 'cancelled'
+    ),
+
+  getSignup: (userId, opportunityId) =>
+    state.signups.find(
+      (s) => s.userId === userId && s.opportunityId === opportunityId
+    ),
+
+  wasCancelled: (userId, opportunityId) => {
+    const s = state.signups.find(
+      (x) => x.userId === userId && x.opportunityId === opportunityId
+    )
+    return s && s.status === 'cancelled' ? s : null
+  },
+
   getTotalHours: (userId) =>
     state.signups
-      .filter((s) => s.userId === userId && s.status === 'completed')
+      .filter(
+        (s) =>
+          s.userId === userId &&
+          (s.status === 'completed' || s.status === 'attended')
+      )
       .reduce((sum, s) => sum + (s.hours || 0), 0),
+
+  cancelVolunteer: (userId, opportunityId, reason) => {
+    const signup = state.signups.find(
+      (s) => s.userId === userId && s.opportunityId === opportunityId
+    )
+    if (!signup) return { ok: false, reason: 'not_found' }
+    if (signup.status === 'cancelled')
+      return { ok: false, reason: 'already_cancelled' }
+
+    signup.status = 'cancelled'
+    signup.cancelledAt = new Date().toISOString()
+    signup.cancellationReason = reason
+
+    const vid = state.volunteerIds.find(
+      (v) =>
+        v.userId === userId &&
+        v.opportunityId === opportunityId &&
+        !v.revoked
+    )
+    if (vid) vid.revoked = true
+
+    save(state)
+    return { ok: true }
+  },
+
+  getCancellation: (userId, opportunityId) => {
+    const signup = state.signups.find(
+      (s) => s.userId === userId && s.opportunityId === opportunityId
+    )
+    if (signup && signup.status === 'cancelled') {
+      return { reason: signup.cancellationReason, at: signup.cancelledAt }
+    }
+    return null
+  },
+
+  /* applications */
+  getApplication: (userId, opportunityId) =>
+    state.applications.find(
+      (a) => a.userId === userId && a.opportunityId === opportunityId
+    ),
+  getApplicationsForOpportunity: (opportunityId) =>
+    state.applications.filter((a) => a.opportunityId === opportunityId),
+  getApplicationsForNgo: (opportunityIds) => {
+    return state.applications
+      .filter((a) => opportunityIds.includes(a.opportunityId))
+      .map((a) => {
+        const signup = state.signups.find(
+          (s) => s.userId === a.userId && s.opportunityId === a.opportunityId
+        )
+        const checkin = state.checkins.find(
+          (c) => c.userId === a.userId && c.opportunityId === a.opportunityId
+        )
+        return {
+          ...a,
+          status: checkin ? 'attended' : signup?.status || 'registered',
+          cancellationReason: signup?.cancellationReason || null,
+          cancelledAt: signup?.cancelledAt || null,
+          checkedInAt: checkin?.checkedInAt || null,
+        }
+      })
+      .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
+  },
+
+  /* volunteer IDs */
+  getVolunteerId: (userId, opportunityId) =>
+    state.volunteerIds.find(
+      (v) =>
+        v.userId === userId &&
+        v.opportunityId === opportunityId &&
+        !v.revoked
+    ),
+  getVolunteerIdByCode: (code) =>
+    state.volunteerIds.find((v) => v.code === code && !v.revoked),
+  getVolunteerIds: (userId) =>
+    state.volunteerIds.filter((v) => v.userId === userId && !v.revoked),
+
+  /* check-ins */
+  checkIn: (code, scannerNgoId) => {
+    const volunteerId = state.volunteerIds.find(
+      (v) => v.code === code && !v.revoked
+    )
+    if (!volunteerId) return { ok: false, reason: 'not_found' }
+    const already = state.checkins.find(
+      (c) => c.volunteerIdId === volunteerId.id
+    )
+    if (already)
+      return { ok: false, reason: 'already_checked_in', volunteerId }
+
+    const checkin = {
+      id: 'ci-' + Date.now(),
+      volunteerIdId: volunteerId.id,
+      code: volunteerId.code,
+      userId: volunteerId.userId,
+      opportunityId: volunteerId.opportunityId,
+      scannerNgoId: scannerNgoId || null,
+      checkedInAt: new Date().toISOString(),
+    }
+    state.checkins.push(checkin)
+
+    const signup = state.signups.find(
+      (s) =>
+        s.userId === volunteerId.userId &&
+        s.opportunityId === volunteerId.opportunityId
+    )
+    if (signup) signup.status = 'attended'
+
+    save(state)
+    return { ok: true, checkin, volunteerId }
+  },
+  getCheckIns: (userId) => state.checkins.filter((c) => c.userId === userId),
+  getCheckInsForOpportunity: (opportunityId) =>
+    state.checkins.filter((c) => c.opportunityId === opportunityId),
+  getCheckInsForNgo: (opportunityIds) =>
+    state.checkins.filter((c) => opportunityIds.includes(c.opportunityId)),
 
   /* saves */
   isSaved: (userId, campaignId) =>
-    state.saves.some((s) => s.userId === userId && s.campaignId === campaignId),
+    state.saves.some(
+      (s) => s.userId === userId && s.campaignId === campaignId
+    ),
   toggleSave: (userId, campaignId) => {
     const exists = state.saves.find(
       (s) => s.userId === userId && s.campaignId === campaignId
@@ -211,7 +546,10 @@ export const activityStore = {
   getExtraOpportunities: () => state.extraOpportunities,
 
   /* notifications */
-  addNotification: (userId, { type = 'system', title, body = '', link = null }) => {
+  addNotification: (
+    userId,
+    { type = 'system', title, body = '', link = null }
+  ) => {
     state.notifications.unshift({
       id: `n-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       userId,
@@ -249,7 +587,9 @@ export const activityStore = {
     if (changed) save(state)
   },
   clearNotifications: (userId) => {
-    state.notifications = state.notifications.filter((n) => n.userId !== userId)
+    state.notifications = state.notifications.filter(
+      (n) => n.userId !== userId
+    )
     save(state)
   },
 
@@ -269,4 +609,90 @@ export const activityStore = {
   },
   getCommentCount: (postId) =>
     state.comments.filter((c) => c.postId === postId).length,
+
+  /* shares */
+  sharePost: (userId, postId) => {
+    state.shares.push({
+      id: `sh-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      postId,
+      userId,
+      sharedAt: new Date().toISOString(),
+    })
+    save(state)
+  },
+  getShareCount: (postId) =>
+    state.shares.filter((s) => s.postId === postId).length,
+  getShares: (postId) => state.shares.filter((s) => s.postId === postId),
+
+  /* messages */
+  getMessages: (userId, ngoId) =>
+    state.messages
+      .filter((m) => m.userId === userId && m.ngoId === ngoId)
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)),
+  sendMessage: (userId, ngoId, text, from = 'user', userName = '') => {
+    if (!text || !text.trim()) return
+    state.messages.push({
+      id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      userId,
+      ngoId,
+      from,
+      userName: userName || '',
+      text: text.trim(),
+      read: from === 'ngo',
+      createdAt: new Date().toISOString(),
+    })
+    save(state)
+  },
+  getUnreadMessageCount: (userId) =>
+    state.messages.filter((m) => m.userId === userId && m.from === 'ngo' && !m.read)
+      .length,
+
+  /* NGO INBOX — group by supporter */
+  getNgoConversations: (ngoId) => {
+    const byUser = {}
+    state.messages.forEach((m) => {
+      if (m.ngoId !== ngoId) return
+      if (!byUser[m.userId]) byUser[m.userId] = []
+      byUser[m.userId].push(m)
+    })
+    return Object.entries(byUser)
+      .map(([userId, msgs]) => {
+        const sorted = [...msgs].sort(
+          (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+        )
+        return {
+          userId,
+          userName: sorted.find((m) => m.userName)?.userName || 'Supporter',
+          messages: sorted,
+          lastMessage: sorted[sorted.length - 1],
+          unreadCount: sorted.filter((m) => m.from === 'user' && !m.read)
+            .length,
+          totalCount: sorted.length,
+        }
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.lastMessage.createdAt) -
+          new Date(a.lastMessage.createdAt)
+      )
+  },
+  markConversationRead: (userId, ngoId) => {
+    let changed = false
+    state.messages.forEach((m) => {
+      if (
+        m.userId === userId &&
+        m.ngoId === ngoId &&
+        m.from === 'user' &&
+        !m.read
+      ) {
+        m.read = true
+        changed = true
+      }
+    })
+    if (changed) save(state)
+  },
+  getNgoUnreadTotal: (ngoId) =>
+    state.messages.filter(
+      (m) => m.ngoId === ngoId && m.from === 'user' && !m.read
+    ).length,
 }
