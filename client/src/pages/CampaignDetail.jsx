@@ -16,6 +16,63 @@ import Icon from '../components/Icon'
 
 const PRESETS = [100, 500, 1000, 2500]
 
+/* ---------- payment logo component ---------- */
+function PaymentLogo({ src, alt }) {
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="payment-logo-img"
+      onError={(e) => {
+        e.target.style.display = 'none'
+      }}
+    />
+  )
+}
+
+const PAYMENT_METHODS = [
+  {
+    id: 'gcash',
+    name: 'GCash',
+    tagline: 'Pay with your GCash wallet',
+    logoSrc: '/images/payments/gcash.png',
+    bg: '#e6f4fb',
+    border: '#0072BC',
+  },
+  {
+    id: 'maya',
+    name: 'Maya',
+    tagline: 'Pay with your Maya wallet',
+    logoSrc: '/images/payments/maya.png',
+    bg: '#e6f9ec',
+    border: '#0FCE4C',
+  },
+  {
+    id: 'bpi',
+    name: 'BPI Online',
+    tagline: 'Bank of the Philippine Islands',
+    logoSrc: '/images/payments/bpi.png',
+    bg: '#fdeaea',
+    border: '#B3121B',
+  },
+  {
+    id: 'bdo',
+    name: 'BDO Online',
+    tagline: 'Banco de Oro',
+    logoSrc: '/images/payments/bdo.png',
+    bg: '#e6ecf9',
+    border: '#0033A0',
+  },
+  {
+    id: 'metrobank',
+    name: 'Metrobank',
+    tagline: 'Metropolitan Bank',
+    logoSrc: '/images/payments/metrobank.png',
+    bg: '#e6edf5',
+    border: '#003DA5',
+  },
+]
+
 export default function CampaignDetail() {
   const { id } = useParams()
   const { user } = useAuth()
@@ -23,8 +80,11 @@ export default function CampaignDetail() {
   const navigate = useNavigate()
   const toast = useToast()
 
-  const [showModal, setShowModal] = useState(false)
+  /* modal flow: null | 'amount' | 'method' | 'processing' | 'done' */
+  const [stage, setStage] = useState(null)
+  const [amount, setAmount] = useState(0)
   const [custom, setCustom] = useState('')
+  const [selectedMethod, setSelectedMethod] = useState(null)
   const [justReceipt, setJustReceipt] = useState(null)
   const [confettiKey, setConfettiKey] = useState(0)
 
@@ -51,27 +111,52 @@ export default function CampaignDetail() {
   const breakdown = campaign.howItWillBeUsed || []
   const breakdownTotal = breakdown.reduce((s, b) => s + b.amount, 0)
 
-  function handleDonate(amount) {
+  function openModal() {
     if (!user) {
       navigate('/login')
       return
     }
-    const receipt = store.donate(user.id, campaign.id, amount)
-    store.addNotification(user.id, {
-      type: 'donation',
-      title: `You donated ₱${amount.toLocaleString()}`,
-      body: `to "${campaign.title}" — thank you!`,
-      link: `/receipt/${receipt.id}`,
-    })
-    setJustReceipt(receipt)
-    setConfettiKey((k) => k + 1)
+    setStage('amount')
+    setAmount(0)
     setCustom('')
-    toast.push(`Thank you! You donated ₱${amount.toLocaleString()}`, 'success')
+    setSelectedMethod(null)
+    setJustReceipt(null)
   }
 
   function closeModal() {
-    setShowModal(false)
+    setStage(null)
+    setAmount(0)
+    setCustom('')
+    setSelectedMethod(null)
     setJustReceipt(null)
+  }
+
+  function chooseAmount(value) {
+    setAmount(value)
+    setStage('method')
+  }
+
+  function confirmMethod() {
+    if (!selectedMethod) return
+    setStage('processing')
+
+    // fake 2-second processing
+    setTimeout(() => {
+      const receipt = store.donate(user.id, campaign.id, amount)
+      store.addNotification(user.id, {
+        type: 'donation',
+        title: `You donated ₱${amount.toLocaleString()}`,
+        body: `via ${selectedMethod.name} — thank you!`,
+        link: `/receipt/${receipt.id}`,
+      })
+      setJustReceipt(receipt)
+      setStage('done')
+      setConfettiKey((k) => k + 1)
+      toast.push(
+        `Payment confirmed via ${selectedMethod.name}`,
+        'success'
+      )
+    }, 2000)
   }
 
   return (
@@ -119,7 +204,6 @@ export default function CampaignDetail() {
         style={{ gridTemplateColumns: '2fr 1fr', gap: 24, marginTop: 28 }}
       >
         <div>
-          {/* quick facts */}
           <div className="campaign-facts">
             <div className="campaign-fact">
               <div className="campaign-fact-icon">
@@ -163,7 +247,6 @@ export default function CampaignDetail() {
             </div>
           </div>
 
-          {/* about */}
           <div className="chart-card" style={{ marginBottom: 20 }}>
             <div className="chart-card-header">
               <h3 className="chart-title">About this campaign</h3>
@@ -171,7 +254,6 @@ export default function CampaignDetail() {
             <p className="campaign-body-text">{campaign.description}</p>
           </div>
 
-          {/* breakdown */}
           {breakdown.length > 0 && (
             <div className="chart-card" style={{ marginBottom: 20 }}>
               <div className="chart-card-header">
@@ -211,7 +293,6 @@ export default function CampaignDetail() {
             </div>
           )}
 
-          {/* impact */}
           {campaign.impactExamples?.length > 0 && (
             <div className="chart-card">
               <div className="chart-card-header">
@@ -236,7 +317,6 @@ export default function CampaignDetail() {
           )}
         </div>
 
-        {/* sidebar */}
         <aside>
           <div className="card" style={{ position: 'sticky', top: 88 }}>
             <div className="campaign-sidebar-header">
@@ -274,7 +354,7 @@ export default function CampaignDetail() {
 
             <button
               className="btn btn-accent btn-block btn-lg"
-              onClick={() => setShowModal(true)}
+              onClick={openModal}
               style={{ marginTop: 20 }}
             >
               <Icon name="heart" size={16} /> Donate to this campaign
@@ -295,103 +375,31 @@ export default function CampaignDetail() {
       </div>
 
       {/* ---------- DONATE MODAL ---------- */}
-      {showModal && (
+      {stage && (
         <div className="modal-backdrop" onClick={closeModal}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            {justReceipt ? (
-              <div style={{ textAlign: 'center', padding: '8px 0' }}>
-                <div
-                  style={{
-                    width: 72,
-                    height: 72,
-                    borderRadius: '50%',
-                    background: 'var(--orange-50)',
-                    display: 'grid',
-                    placeItems: 'center',
-                    margin: '0 auto 16px',
-                  }}
-                >
-                  <Icon name="heart" size={32} color="var(--orange-500)" />
-                </div>
-                <h2 style={{ margin: '0 0 8px', fontSize: 22 }}>
-                  Thank you!
-                </h2>
-                <p className="text-muted" style={{ marginBottom: 20 }}>
-                  Your gift of
-                </p>
-                <div
-                  style={{
-                    fontSize: 40,
-                    fontWeight: 800,
-                    color: 'var(--blue-700)',
-                    letterSpacing: '-0.03em',
-                    marginBottom: 20,
-                  }}
-                >
-                  <AnimatedCounter value={justReceipt.amount} prefix="₱" />
-                </div>
-                <p
-                  className="text-muted"
-                  style={{ marginBottom: 24, fontSize: 13 }}
-                >
-                  goes directly to <strong>{campaign.title}</strong>
-                </p>
-
-                <div className="donation-impact">
-                  <div className="donation-impact-row">
-                    <span>Your total gifts to this cause</span>
-                    <strong>₱{myExtra.toLocaleString()}</strong>
-                  </div>
-                  <div className="donation-impact-row">
-                    <span>New campaign progress</span>
-                    <strong>{goalPct}%</strong>
-                  </div>
-                </div>
-
-                <Link
-                  to={`/receipt/${justReceipt.id}`}
-                  style={{ textDecoration: 'none' }}
-                >
-                  <button
-                    className="btn btn-primary btn-block btn-lg"
-                    style={{ marginTop: 20 }}
-                  >
-                    View receipt
-                  </button>
-                </Link>
-                <button
-                  className="btn btn-neutral btn-block"
-                  style={{ marginTop: 8 }}
-                  onClick={closeModal}
-                >
-                  Close
-                </button>
-              </div>
-            ) : (
+          <div
+            className="modal donate-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* STEP 1 — AMOUNT */}
+            {stage === 'amount' && (
               <>
-                <h2 style={{ marginTop: 0, marginBottom: 4 }}>
-                  Make a donation
-                </h2>
-                <p
-                  className="text-muted"
-                  style={{ marginBottom: 20, fontSize: 13 }}
-                >
-                  Choose an amount. No real payment is processed.
-                </p>
+                <div className="donate-modal-header">
+                  <h2 className="donate-modal-title">
+                    Make a donation
+                  </h2>
+                  <p className="donate-modal-subtitle">
+                    Choose an amount. Demo only — no real charge.
+                  </p>
+                </div>
 
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: 8,
-                    marginBottom: 16,
-                  }}
-                >
+                <div className="amount-grid">
                   {PRESETS.map((amt) => (
                     <button
                       key={amt}
                       className="amount-chip"
-                      onClick={() => handleDonate(amt)}
+                      onClick={() => chooseAmount(amt)}
+                      type="button"
                     >
                       ₱{amt.toLocaleString()}
                     </button>
@@ -413,18 +421,188 @@ export default function CampaignDetail() {
                 <button
                   className="btn btn-accent btn-block btn-lg"
                   disabled={!custom || Number(custom) <= 0}
-                  onClick={() => handleDonate(Number(custom))}
+                  onClick={() => chooseAmount(Number(custom))}
+                  type="button"
                 >
-                  Donate ₱{custom || 0}
+                  Continue with ₱{custom || 0}
+                  <Icon name="arrow-right" size={16} />
                 </button>
                 <button
                   className="btn btn-neutral btn-block"
                   style={{ marginTop: 8 }}
                   onClick={closeModal}
+                  type="button"
                 >
                   Cancel
                 </button>
               </>
+            )}
+
+            {/* STEP 2 — PAYMENT METHOD */}
+            {stage === 'method' && (
+              <>
+                <div className="donate-modal-header">
+                  <button
+                    className="donate-modal-back"
+                    onClick={() => setStage('amount')}
+                    type="button"
+                  >
+                    <span
+                      style={{
+                        transform: 'rotate(180deg)',
+                        display: 'inline-block',
+                      }}
+                    >
+                      <Icon name="chevron-right" size={16} />
+                    </span>
+                    Back
+                  </button>
+                  <div className="donate-modal-amount-badge">
+                    Donating <strong>₱{amount.toLocaleString()}</strong>
+                  </div>
+                  <h2 className="donate-modal-title">
+                    Choose payment method
+                  </h2>
+                  <p className="donate-modal-subtitle">
+                    All methods are simulated for this demo.
+                  </p>
+                </div>
+
+                <div className="payment-list">
+                  {PAYMENT_METHODS.map((m) => {
+                    const active = selectedMethod?.id === m.id
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        className={`payment-method ${
+                          active ? 'active' : ''
+                        }`}
+                        onClick={() => setSelectedMethod(m)}
+                      >
+                        <div
+                          className="payment-logo-wrap"
+                          style={{
+                            background: m.bg,
+                            borderColor: active ? m.border : 'transparent',
+                          }}
+                        >
+                          <PaymentLogo src={m.logoSrc} alt={m.name} />
+                        </div>
+                        <div className="payment-info">
+                          <div className="payment-name">{m.name}</div>
+                          <div className="payment-tagline">
+                            {m.tagline}
+                          </div>
+                        </div>
+                        <div
+                          className="payment-radio"
+                          style={{
+                            borderColor: active
+                              ? 'var(--blue-700)'
+                              : 'var(--ink-300)',
+                          }}
+                        >
+                          {active && <span className="payment-radio-dot" />}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <button
+                  className="btn btn-accent btn-block btn-lg"
+                  disabled={!selectedMethod}
+                  onClick={confirmMethod}
+                  type="button"
+                  style={{ marginTop: 20 }}
+                >
+                  Pay ₱{amount.toLocaleString()}
+                  {selectedMethod && ` via ${selectedMethod.name}`}
+                </button>
+                <button
+                  className="btn btn-neutral btn-block"
+                  style={{ marginTop: 8 }}
+                  onClick={closeModal}
+                  type="button"
+                >
+                  Cancel
+                </button>
+              </>
+            )}
+
+            {/* STEP 3 — PROCESSING */}
+            {stage === 'processing' && (
+              <div className="donate-processing">
+                <div className="donate-processing-spinner" />
+                <h2 className="donate-processing-title">
+                  Processing payment
+                </h2>
+                <p className="donate-processing-text">
+                  Connecting to {selectedMethod?.name}…
+                </p>
+                <div className="donate-processing-amount">
+                  ₱{amount.toLocaleString()}
+                </div>
+                <p className="donate-processing-note">
+                  Please don't close this window. This is a demo — no real
+                  charge will occur.
+                </p>
+              </div>
+            )}
+
+            {/* STEP 4 — DONE */}
+            {stage === 'done' && justReceipt && (
+              <div className="donate-done">
+                <div className="donate-done-icon">
+                  <Icon name="check-circle" size={40} color="#16a34a" />
+                </div>
+                <h2 className="donate-done-title">Payment successful!</h2>
+                <p className="donate-done-subtitle">
+                  Thank you for your donation
+                </p>
+                <div className="donate-done-amount">
+                  <AnimatedCounter
+                    value={justReceipt.amount}
+                    prefix="₱"
+                  />
+                </div>
+                <div className="donate-done-method">
+                  via {selectedMethod?.name}
+                </div>
+
+                <div className="donation-impact" style={{ marginTop: 20 }}>
+                  <div className="donation-impact-row">
+                    <span>Your total gifts to this cause</span>
+                    <strong>₱{myExtra.toLocaleString()}</strong>
+                  </div>
+                  <div className="donation-impact-row">
+                    <span>New campaign progress</span>
+                    <strong>{goalPct}%</strong>
+                  </div>
+                </div>
+
+                <Link
+                  to={`/receipt/${justReceipt.id}`}
+                  style={{ textDecoration: 'none' }}
+                >
+                  <button
+                    className="btn btn-primary btn-block btn-lg"
+                    style={{ marginTop: 20 }}
+                    type="button"
+                  >
+                    View receipt
+                  </button>
+                </Link>
+                <button
+                  className="btn btn-neutral btn-block"
+                  style={{ marginTop: 8 }}
+                  onClick={closeModal}
+                  type="button"
+                >
+                  Close
+                </button>
+              </div>
             )}
           </div>
         </div>
