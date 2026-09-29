@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { OPPORTUNITIES } from '../data/opportunities'
 import { NGOS } from '../data/ngos'
@@ -12,17 +12,7 @@ import VolunteerTicket from '../components/VolunteerTicket'
 import VolunteerApplicationForm from '../components/VolunteerApplicationForm'
 import VolunteerDetailModal from '../components/VolunteerDetailModal'
 import CancelVolunteerModal from '../components/CancelVolunteerModal'
-import VolunteerCalendar from '../components/VolunteerCalendar'
 import Icon from '../components/Icon'
-
-const LIVE_SIGNUPS = [
-  { name: 'Andrea C.', event: 'Coastal Cleanup Drive', ago: '2 min ago' },
-  { name: 'Miguel R.', event: 'Relief Pack Assembly Day', ago: '8 min ago' },
-  { name: 'Sofia T.', event: 'Shelter Care Volunteer', ago: '14 min ago' },
-  { name: 'Anonymous', event: 'Community Learning Center Build', ago: '21 min ago' },
-  { name: 'Katrina L.', event: 'Relief Pack Assembly Day', ago: '35 min ago' },
-  { name: 'Ramon C.', event: 'Shelter Care Volunteer', ago: '1 hr ago' },
-]
 
 const SORT_OPTIONS = [
   { key: 'soonest', label: 'Soonest' },
@@ -46,8 +36,6 @@ export default function Volunteer() {
   const [detail, setDetail] = useState(null)
   const [applying, setApplying] = useState(null)
   const [cancelling, setCancelling] = useState(null)
-  const [tickerIndex, setTickerIndex] = useState(0)
-  const [calendarDay, setCalendarDay] = useState(null)
 
   const all = [...OPPORTUNITIES, ...store.getExtraOpportunities()]
 
@@ -66,10 +54,9 @@ export default function Volunteer() {
   const isCancelled = (opportunityId) =>
     getSignupStatus(opportunityId) === 'cancelled'
 
-  const getNgo = (id) => NGOS.find((n) => n.id === id)
-
   const filtered = useMemo(() => {
     let list = [...all]
+
     if (tab === 'nearby') {
       list = list.filter((o) => o.location === 'Quezon City')
     } else if (tab === 'this-week') {
@@ -80,10 +67,11 @@ export default function Volunteer() {
         return diff >= 0 && diff <= 7
       })
     }
+
     if (search.trim()) {
       const q = search.toLowerCase()
       list = list.filter((o) => {
-        const ngo = getNgo(o.ngoId)
+        const ngo = NGOS.find((n) => n.id === o.ngoId)
         return (
           o.title.toLowerCase().includes(q) ||
           o.description.toLowerCase().includes(q) ||
@@ -92,22 +80,17 @@ export default function Volunteer() {
         )
       })
     }
+
     const sorters = {
       soonest: (a, b) => new Date(a.date) - new Date(b.date),
       latest: (a, b) => new Date(b.date) - new Date(a.date),
       slots: (a, b) => b.needed - b.registered - (a.needed - a.registered),
       title: (a, b) => a.title.localeCompare(b.title),
     }
+
     return list.sort(sorters[sort] || sorters.soonest)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [all.length, tab, search, sort])
-
-  useEffect(() => {
-    const t = setInterval(() => {
-      setTickerIndex((i) => (i + 1) % LIVE_SIGNUPS.length)
-    }, 4000)
-    return () => clearInterval(t)
-  }, [])
 
   const myUpcoming = useMemo(() => {
     if (!user) return []
@@ -131,7 +114,8 @@ export default function Volunteer() {
     all.forEach((o) => {
       const slots = o.needed - o.registered
       if (slots <= 0) return
-      const category = getNgo(o.ngoId)?.categories?.[0] || 'General'
+      const ngo = NGOS.find((n) => n.id === o.ngoId)
+      const category = ngo?.categories?.[0] || 'General'
       if (!groups[category]) groups[category] = { count: 0, slots: 0 }
       groups[category].count += 1
       groups[category].slots += slots
@@ -142,8 +126,6 @@ export default function Volunteer() {
       .slice(0, 5)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [all.length])
-
-  const maxCategorySlots = categoryStats[0]?.slots || 1
 
   const spotlightNgo = useMemo(() => {
     const ngoSlots = {}
@@ -158,7 +140,7 @@ export default function Volunteer() {
       (a, b) => b[1].slots - a[1].slots
     )[0]
     if (!best) return null
-    const ngo = getNgo(best[0])
+    const ngo = NGOS.find((n) => n.id === best[0])
     return ngo
       ? { ...ngo, openSlots: best[1].slots, events: best[1].events }
       : null
@@ -191,18 +173,22 @@ export default function Volunteer() {
       ...formData,
       hours: 0,
     })
+
     if (!result) {
       openTicket(opp)
       setApplying(null)
       return
     }
+
     const { volunteerId } = result
+
     store.addNotification(user.id, {
       type: 'signup',
       title: 'Volunteer ID issued',
       body: `Application confirmed for "${opp.title}". Show your QR code at the event.`,
       link: '/my-kaia',
     })
+
     setConfettiKey((k) => k + 1)
     setTicket({ volunteerId, opportunity: opp })
     setApplying(null)
@@ -224,11 +210,8 @@ export default function Volunteer() {
     setCancelling(null)
   }
 
-  const currentTicker = LIVE_SIGNUPS[tickerIndex]
   const activeSortLabel =
     SORT_OPTIONS.find((o) => o.key === sort)?.label || 'Soonest'
-
-  const listToRender = calendarDay ? calendarDay : filtered
 
   return (
     <div className="container">
@@ -264,6 +247,7 @@ export default function Volunteer() {
             <span className="sort-value">{activeSortLabel}</span>
             <Icon name="chevron-down" size={14} />
           </button>
+
           {sortOpen && (
             <>
               <div
@@ -285,7 +269,11 @@ export default function Volunteer() {
                   >
                     {opt.label}
                     {sort === opt.key && (
-                      <Icon name="check" size={14} color="var(--blue-700)" />
+                      <Icon
+                        name="check"
+                        size={14}
+                        color="var(--blue-700)"
+                      />
                     )}
                   </button>
                 ))}
@@ -297,10 +285,7 @@ export default function Volunteer() {
         <div className="view-toggle">
           <button
             className={`view-btn ${view === 'grid' ? 'active' : ''}`}
-            onClick={() => {
-              setView('grid')
-              setCalendarDay(null)
-            }}
+            onClick={() => setView('grid')}
             title="Grid view"
             type="button"
           >
@@ -308,22 +293,11 @@ export default function Volunteer() {
           </button>
           <button
             className={`view-btn ${view === 'list' ? 'active' : ''}`}
-            onClick={() => {
-              setView('list')
-              setCalendarDay(null)
-            }}
+            onClick={() => setView('list')}
             title="List view"
             type="button"
           >
             <Icon name="list" size={16} />
-          </button>
-          <button
-            className={`view-btn ${view === 'calendar' ? 'active' : ''}`}
-            onClick={() => setView('calendar')}
-            title="Calendar view"
-            type="button"
-          >
-            <Icon name="calendar" size={16} />
           </button>
         </div>
       </div>
@@ -347,16 +321,15 @@ export default function Volunteer() {
 
       <div className="donate-results">
         <span>
-          {listToRender.length}{' '}
-          {listToRender.length === 1 ? 'opportunity' : 'opportunities'} found
+          {filtered.length}{' '}
+          {filtered.length === 1 ? 'opportunity' : 'opportunities'} found
         </span>
-        {(search || tab !== 'nearby' || calendarDay) && (
+        {(search || tab !== 'nearby') && (
           <button
             className="donate-clear"
             onClick={() => {
               setSearch('')
               setTab('nearby')
-              setCalendarDay(null)
             }}
             type="button"
           >
@@ -367,34 +340,18 @@ export default function Volunteer() {
 
       <div className="volunteer-layout">
         <div className="volunteer-main">
-          {view === 'calendar' ? (
-            <VolunteerCalendar
-              events={filtered}
-              onDayClick={(events) => setCalendarDay(events)}
-            />
-          ) : listToRender.length === 0 ? (
+          {filtered.length === 0 ? (
             <EmptyState
               icon="search"
               title="No opportunities match"
               message="Try a different search or filter."
-              suggestions={[
-                { label: 'Clear filters', onClick: () => {
-                  setSearch('')
-                  setTab('nearby')
-                  setCalendarDay(null)
-                }, icon: 'x' },
-                { label: 'See all locations', onClick: () => {
-                  setTab('all')
-                  setSearch('')
-                }, icon: 'globe' },
-              ]}
             />
           ) : (
             <div
               className={view === 'grid' ? 'grid grid-2' : 'volunteer-list'}
             >
-              {listToRender.map((o) => {
-                const ngo = getNgo(o.ngoId)
+              {filtered.map((o) => {
+                const ngo = NGOS.find((n) => n.id === o.ngoId)
                 const signed = isSignedUp(o.id)
                 const cancelled = isCancelled(o.id)
                 const window = getCancellationWindow(o.date)
@@ -430,6 +387,7 @@ export default function Volunteer() {
                       >
                         {o.title}
                       </div>
+
                       <div
                         className="row text-muted"
                         style={{
@@ -452,6 +410,7 @@ export default function Volunteer() {
                           {o.date}
                         </span>
                       </div>
+
                       <p
                         style={{
                           fontSize: 14,
@@ -536,7 +495,9 @@ export default function Volunteer() {
           )}
         </div>
 
+        {/* ---------- SIDEBAR ---------- */}
         <aside className="volunteer-sidebar">
+          {/* 1. YOUR UPCOMING EVENTS */}
           <div className="sidebar-card">
             <div className="sidebar-card-header">
               <h3 className="sidebar-card-title">Your upcoming events</h3>
@@ -581,83 +542,37 @@ export default function Volunteer() {
             )}
           </div>
 
-          <div className="sidebar-card">
-            <div className="sidebar-card-header">
-              <h3 className="sidebar-card-title">
-                <span className="live-dot" />
-                Live signups
-              </h3>
+          {/* 2. NEEDS VOLUNTEERS — solid blue with numbers */}
+          <div className="needs-volunteers-card">
+            <div className="needs-volunteers-header">
+              <h3 className="needs-volunteers-title">Needs volunteers</h3>
+              <span className="needs-volunteers-subtitle">This month</span>
             </div>
-            <div className="live-ticker">
-              <div key={tickerIndex} className="live-ticker-item">
-                <div className="live-ticker-avatar">
-                  {currentTicker.name.charAt(0)}
-                </div>
-                <div className="live-ticker-body">
-                  <div className="live-ticker-line">
-                    <strong>{currentTicker.name}</strong> signed up for
-                  </div>
-                  <div className="live-ticker-campaign">
-                    {currentTicker.event}
-                  </div>
-                  <div className="live-ticker-time">{currentTicker.ago}</div>
-                </div>
-              </div>
-              <div className="live-ticker-dots">
-                {LIVE_SIGNUPS.map((_, i) => (
-                  <span
-                    key={i}
-                    className={`live-ticker-dot ${
-                      i === tickerIndex ? 'active' : ''
-                    }`}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="sidebar-card">
-            <div className="sidebar-card-header">
-              <h3 className="sidebar-card-title">Needs volunteers</h3>
-            </div>
-            <div className="sidebar-list">
+            <div className="needs-volunteers-list">
               {categoryStats.length === 0 ? (
-                <div className="sidebar-empty">
+                <div className="needs-volunteers-empty">
                   All categories are fully staffed.
                 </div>
               ) : (
                 categoryStats.map((c) => (
                   <button
                     key={c.name}
-                    className="category-need"
+                    className="needs-volunteers-row"
                     onClick={() => setTab('all')}
                     type="button"
                   >
-                    <div className="category-need-header">
-                      <span className="category-need-name">{c.name}</span>
-                      <span className="category-need-slots">
-                        {c.slots} open
-                      </span>
-                    </div>
-                    <div className="category-need-track">
-                      <div
-                        className="category-need-fill"
-                        style={{
-                          width: `${Math.round(
-                            (c.slots / maxCategorySlots) * 100
-                          )}%`,
-                        }}
-                      />
-                    </div>
-                    <div className="category-need-meta">
-                      {c.count} {c.count === 1 ? 'event' : 'events'}
-                    </div>
+                    <span className="needs-volunteers-name">{c.name}</span>
+                    <span className="needs-volunteers-number">
+                      {c.slots}
+                      <span className="needs-volunteers-unit">open</span>
+                    </span>
                   </button>
                 ))
               )}
             </div>
           </div>
 
+          {/* 3. NGO SPOTLIGHT */}
           {spotlightNgo && (
             <div className="sidebar-card">
               <div className="sidebar-card-header">
@@ -701,7 +616,7 @@ export default function Volunteer() {
       {detail && (
         <VolunteerDetailModal
           opportunity={detail}
-          ngo={getNgo(detail.ngoId)}
+          ngo={NGOS.find((n) => n.id === detail.ngoId)}
           alreadySignedUp={isSignedUp(detail.id)}
           onClose={() => setDetail(null)}
           onApply={handleApplyFromDetail}
@@ -712,7 +627,7 @@ export default function Volunteer() {
       {applying && (
         <VolunteerApplicationForm
           opportunity={applying}
-          ngo={getNgo(applying.ngoId)}
+          ngo={NGOS.find((n) => n.id === applying.ngoId)}
           onClose={() => {
             setApplying(null)
             setDetail(applying)
