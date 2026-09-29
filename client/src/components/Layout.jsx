@@ -95,9 +95,17 @@ function Header() {
                 to={user.role === 'ngo_rep' ? '/dashboard' : '/my-kaia'}
                 className="user-chip"
               >
+                {user.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="avatar avatar-img"
+                />
+              ) : (
                 <span className="avatar">
                   {user.name.charAt(0).toUpperCase()}
                 </span>
+              )}
                 <span>{user.name.split(' ')[0]}</span>
               </Link>
               <button

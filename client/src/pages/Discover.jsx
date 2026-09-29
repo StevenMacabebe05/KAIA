@@ -24,8 +24,8 @@ export default function Discover() {
     return matchesCategory && matchesQuery
   })
 
-  return (
-    <div className="container">
+    return (
+    <div className="container-wide">
       <div className="page-header">
         <h1 className="page-title">Discover NGOs</h1>
         <p className="page-subtitle">

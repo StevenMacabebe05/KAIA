@@ -155,7 +155,7 @@ export default function Donate() {
     SORT_OPTIONS.find((o) => o.key === sort)?.label || 'Featured'
 
   return (
-    <div className="container">
+    <div className="container-wide">
       <div className="page-header">
         <h1 className="page-title">Donation campaigns</h1>
         <p className="page-subtitle">

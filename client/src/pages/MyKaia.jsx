@@ -77,9 +77,17 @@ export default function MyKaia() {
       {/* ---------- user card ---------- */}
       <div className="card" style={{ padding: 28, marginBottom: 24 }}>
         <div className="row" style={{ gap: 18, flexWrap: 'wrap' }}>
-          <div className="avatar avatar-lg">
-            {user.name.charAt(0).toUpperCase()}
-          </div>
+          {user.avatar ? (
+            <img
+              src={user.avatar}
+              alt={user.name}
+              className="avatar avatar-lg avatar-img"
+            />
+          ) : (
+            <div className="avatar avatar-lg">
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+          )}
           <div style={{ flex: 1, minWidth: 200 }}>
             <h1
               style={{

@@ -1,22 +1,21 @@
 export const HARDCODED_ACCOUNTS = [
-  {
-    id: 'u-1',
-    name: 'Demo Supporter',
-    email: 'demo@kaia.ph',
-    password: 'demo123',
-    role: 'supporter',
-    avatar: '',
-    ngoId: null,
-  },
-  {
-    id: 'u-2',
-    name: 'Angat Buhay Rep',
-    email: 'ngo@kaia.ph',
-    password: 'demo123',
-    role: 'ngo_rep',
-    avatar: '',
-    ngoId: 'ngo-1',
-  },
+{
+  id: 'u-1',
+  name: 'Steven Macabebe',
+  email: 'demo@kaia.ph',
+  password: 'demo123',
+  role: 'supporter',
+  avatar: '/images/users/profile.png',   
+  ngoId: null,
+},
+{
+  id: 'u-2',
+  name: 'Angat Buhay Rep',
+  email: 'ngo@kaia.ph',
+  password: 'demo123',
+  role: 'ngo_rep',
+  avatar: '/images/users/ngo-rep.jpg',  
+},
 ]
 
 export const DEMO_HINTS = [

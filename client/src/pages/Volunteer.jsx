@@ -213,8 +213,8 @@ export default function Volunteer() {
   const activeSortLabel =
     SORT_OPTIONS.find((o) => o.key === sort)?.label || 'Soonest'
 
-  return (
-    <div className="container">
+   return (
+    <div className="container-wide">
       <Confetti trigger={confettiKey} />
 
       <div className="page-header">

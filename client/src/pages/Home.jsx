@@ -9,7 +9,6 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from '../components/Toast'
 import EmptyState from '../components/EmptyState'
 import HeroCarousel from '../components/HeroCarousel'
-import Testimonials from '../components/Testimonials'
 import FeedPost from '../components/FeedPost'
 import Icon from '../components/Icon'
 
@@ -73,7 +72,7 @@ export default function Home() {
 
   const suggestions = NGOS.filter(
     (n) => !followedIds.includes(n.id)
-  ).slice(0, 5)
+  ).slice(0, 4)
 
   const trendingVolunteers = [...OPPORTUNITIES]
     .sort((a, b) => new Date(a.date) - new Date(b.date))
@@ -83,18 +82,69 @@ export default function Home() {
     .sort((a, b) => b.donorCount - a.donorCount)
     .slice(0, 3)
 
+  /* ---------- personal stats ---------- */
+  const myStats = (() => {
+    if (!user) return null
+    const donations = store.getDonations(user.id)
+    const signups = store.getSignups(user.id)
+    const follows = store.getFollowedNgoIds(user.id)
+    const totalDonated = donations.reduce((s, d) => s + d.amount, 0)
+    const hours = signups
+      .filter(
+        (s) => s.status === 'completed' || s.status === 'attended'
+      )
+      .reduce((sum, s) => sum + (s.hours || 4), 0)
+    return {
+      totalDonated,
+      hours,
+      followsCount: follows.length,
+    }
+  })()
+
+  /* ---------- user's registered volunteer events ---------- */
+  const myRegisteredEvents = (() => {
+    if (!user) return []
+    const signups = store.getSignups(user.id)
+    const all = [...OPPORTUNITIES, ...store.getExtraOpportunities()]
+    return signups
+      .filter((s) => s.status !== 'cancelled')
+      .map((s) => {
+        const opp = all.find((o) => o.id === s.opportunityId)
+        return opp ? { ...s, opportunity: opp } : null
+      })
+      .filter(Boolean)
+      .sort(
+        (a, b) =>
+          new Date(a.opportunity.date) - new Date(b.opportunity.date)
+      )
+      .slice(0, 3)
+  })()
+
   const getNgo = (id) => NGOS.find((n) => n.id === id)
 
+  const NAV_ITEMS = [
+    { to: '/', label: 'Home', icon: 'home' },
+    { to: '/discover', label: 'Discover NGOs', icon: 'globe' },
+    { to: '/donate', label: 'Donate', icon: 'heart' },
+    { to: '/volunteer', label: 'Volunteer', icon: 'hand' },
+    {
+      to: user?.role === 'ngo_rep' ? '/dashboard' : '/my-kaia',
+      label: user?.role === 'ngo_rep' ? 'Dashboard' : 'My KAIA',
+      icon: 'user',
+    },
+    { to: '/notifications', label: 'Notifications', icon: 'bell' },
+  ]
+
   return (
-    <div className="container">
+    <div className="container-wide">
       {/* ---------- HERO ---------- */}
       <section className="hero-slim">
         <HeroCarousel slides={HERO_SLIDES} interval={5500} />
         <div className="hero-slim-overlay" />
         <div className="hero-slim-content">
           <h1 className="hero-slim-title">
-            Everyone has something they can{' '}
-            <span className="gradient-text-orange">contribute</span>.
+            Everyone has something they{' '}
+            <span className="gradient-text-orange">can</span> contribute.
           </h1>
           <p className="hero-slim-subtitle">
             KAIA connects you with verified Filipino NGOs — donate, volunteer,
@@ -103,9 +153,160 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ---------- TWO-COLUMN LAYOUT ---------- */}
-      <div className="home-layout">
-        {/* LEFT — FEED */}
+      {/* ---------- THREE-COLUMN LAYOUT ---------- */}
+      <div className="home-layout-3col">
+        {/* ================= LEFT — PROFILE + NAV + EVENTS ================= */}
+        <aside className="home-left">
+          {/* 1. About you */}
+          <div className="home-left-card">
+            {user ? (
+              <>
+                <Link to="/my-kaia" className="home-left-profile">
+                  {user.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.name}
+                      className="home-left-avatar home-left-avatar-img"
+                    />
+                  ) : (
+                    <div className="home-left-avatar">
+                      {user.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="home-left-profile-info">
+                    <div className="home-left-name">{user.name}</div>
+                    <div className="home-left-role">
+                      {user.role === 'ngo_rep'
+                        ? 'NGO Representative'
+                        : 'Supporter'}
+                    </div>
+                  </div>
+                </Link>
+
+                {myStats && (
+                  <div className="home-left-stats">
+                    <Link to="/my-kaia" className="home-left-stat">
+                      <div className="home-left-stat-value">
+                        ₱{myStats.totalDonated.toLocaleString()}
+                      </div>
+                      <div className="home-left-stat-label">Donated</div>
+                    </Link>
+                    <Link to="/my-kaia" className="home-left-stat">
+                      <div className="home-left-stat-value">
+                        {myStats.hours}
+                      </div>
+                      <div className="home-left-stat-label">Hours</div>
+                    </Link>
+                    <Link to="/my-kaia" className="home-left-stat">
+                      <div className="home-left-stat-value">
+                        {myStats.followsCount}
+                      </div>
+                      <div className="home-left-stat-label">NGOs</div>
+                    </Link>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="home-left-guest">
+                <div className="home-left-guest-title">
+                  Join KAIA today
+                </div>
+                <p className="home-left-guest-text">
+                  Support causes that matter — donate, volunteer, and follow
+                  verified Filipino NGOs.
+                </p>
+                <Link
+                  to="/login"
+                  className="btn btn-primary btn-sm btn-block"
+                >
+                  Log in
+                </Link>
+                <Link
+                  to="/signup"
+                  className="btn btn-ghost btn-sm btn-block"
+                  style={{ marginTop: 6 }}
+                >
+                  Sign up
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* 2. Navigation */}
+          <nav className="home-left-card home-left-nav">
+            {NAV_ITEMS.map((item) => (
+              <Link
+                key={item.label}
+                to={item.to}
+                className="home-left-nav-item"
+              >
+                <span className="home-left-nav-icon">
+                  <Icon name={item.icon} size={16} />
+                </span>
+                <span className="home-left-nav-label">{item.label}</span>
+              </Link>
+            ))}
+          </nav>
+
+          {/* 3. Registered events */}
+          <div className="home-left-card">
+            <div className="home-left-section-header">
+              <span>Your registered events</span>
+              {myRegisteredEvents.length > 0 && (
+                <Link to="/my-kaia" className="home-left-see-all">
+                  See all
+                </Link>
+              )}
+            </div>
+
+            {myRegisteredEvents.length === 0 ? (
+              <div className="home-left-empty">
+                <Icon name="calendar" size={20} color="var(--ink-300)" />
+                <div className="home-left-empty-title">
+                  {user ? 'No events yet' : 'Sign in to track events'}
+                </div>
+                <div className="home-left-empty-text">
+                  {user
+                    ? 'Browse volunteer opportunities and sign up to see them here.'
+                    : 'Log in to see your registered volunteer events.'}
+                </div>
+              </div>
+            ) : (
+              <div className="home-left-events">
+                {myRegisteredEvents.map((s) => (
+                  <Link
+                    key={s.createdAt}
+                    to="/volunteer"
+                    className="home-left-event"
+                  >
+                    <div className="home-left-event-date">
+                      <span className="home-left-event-day">
+                        {new Date(s.opportunity.date).getDate()}
+                      </span>
+                      <span className="home-left-event-month">
+                        {new Date(s.opportunity.date).toLocaleDateString(
+                          'en-US',
+                          { month: 'short' }
+                        )}
+                      </span>
+                    </div>
+                    <div className="home-left-event-body">
+                      <div className="home-left-event-title">
+                        {s.opportunity.title}
+                      </div>
+                      <div className="home-left-event-meta">
+                        <Icon name="map-pin" size={10} />
+                        <span>{s.opportunity.location}</span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </aside>
+
+        {/* ================= MIDDLE — FEED ================= */}
         <div className="home-feed">
           <div className="home-section-header">
             <div>
@@ -192,12 +393,12 @@ export default function Home() {
           )}
         </div>
 
-        {/* RIGHT — SIDEBAR */}
+        {/* ================= RIGHT — TRENDING + VOLUNTEER + SUGGESTIONS ================= */}
         <aside className="home-sidebar">
-          {/* 1. TRENDING CAMPAIGNS — blue gradient header */}
-            <div className="sidebar-card">
-              <div className="sidebar-card-header sidebar-card-header-blue">
-                <h3 className="sidebar-card-title">Trending campaigns</h3>
+          {/* Trending campaigns */}
+          <div className="sidebar-card">
+            <div className="sidebar-card-header sidebar-card-header-blue">
+              <h3 className="sidebar-card-title">Trending campaigns</h3>
               <Link
                 to="/donate"
                 className="sidebar-card-link sidebar-card-link-white"
@@ -226,7 +427,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* 2. VOLUNTEER NOW — orange gradient header */}
+          {/* Volunteer now */}
           <div className="sidebar-card">
             <div className="sidebar-card-header sidebar-card-header-orange">
               <h3 className="sidebar-card-title">Volunteer now</h3>
@@ -266,7 +467,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* 3. YOU MIGHT LIKE — default white header */}
+          {/* You might like */}
           <div className="sidebar-card">
             <div className="sidebar-card-header">
               <h3 className="sidebar-card-title">You might like</h3>
@@ -326,9 +527,6 @@ export default function Home() {
           </div>
         </aside>
       </div>
-
-      {/* ---------- TESTIMONIALS ---------- */}
-      <Testimonials />
     </div>
   )
 }
