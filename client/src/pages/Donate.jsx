@@ -465,15 +465,15 @@ export default function Donate() {
 
           {/* 2. FEATURED NGO */}
           {featuredNgo && (
-            <div className="sidebar-card">
-              <div className="sidebar-card-header">
-                <h3 className="sidebar-card-title">Featured NGO</h3>
-              </div>
-              <Link
-                to={`/ngo/${featuredNgo.id}`}
-                className="featured-ngo"
-              >
-                <div className="featured-ngo-cover">
+                    <div className="sidebar-card">
+                      <div className="sidebar-card-header sidebar-card-header-blue">
+                        <h3 className="sidebar-card-title">Featured NGO</h3>
+                      </div>
+                      <Link
+                        to={`/ngo/${featuredNgo.id}`}
+                        className="featured-ngo"
+                      >
+                      <div className="featured-ngo-cover">
                   <img src={featuredNgo.cover} alt="" />
                   <div className="featured-ngo-overlay" />
                 </div>

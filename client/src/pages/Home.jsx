@@ -87,6 +87,7 @@ export default function Home() {
 
   return (
     <div className="container">
+      {/* ---------- HERO ---------- */}
       <section className="hero-slim">
         <HeroCarousel slides={HERO_SLIDES} interval={5500} />
         <div className="hero-slim-overlay" />
@@ -102,7 +103,9 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ---------- TWO-COLUMN LAYOUT ---------- */}
       <div className="home-layout">
+        {/* LEFT — FEED */}
         <div className="home-feed">
           <div className="home-section-header">
             <div>
@@ -189,7 +192,81 @@ export default function Home() {
           )}
         </div>
 
+        {/* RIGHT — SIDEBAR */}
         <aside className="home-sidebar">
+          {/* 1. TRENDING CAMPAIGNS — blue gradient header */}
+            <div className="sidebar-card">
+              <div className="sidebar-card-header sidebar-card-header-blue">
+                <h3 className="sidebar-card-title">Trending campaigns</h3>
+              <Link
+                to="/donate"
+                className="sidebar-card-link sidebar-card-link-white"
+              >
+                See all
+              </Link>
+            </div>
+            <div className="sidebar-list">
+              {trendingCampaigns.map((c) => {
+                const ngo = getNgo(c.ngoId)
+                return (
+                  <Link
+                    key={c.id}
+                    to={`/campaign/${c.id}`}
+                    className="trending-item"
+                  >
+                    <div className="trending-tag orange">
+                      <Icon name="trending" size={11} />
+                      {c.donorCount} supporters
+                    </div>
+                    <div className="trending-title">{c.title}</div>
+                    <div className="trending-meta">{ngo?.name}</div>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* 2. VOLUNTEER NOW — orange gradient header */}
+          <div className="sidebar-card">
+            <div className="sidebar-card-header sidebar-card-header-orange">
+              <h3 className="sidebar-card-title">Volunteer now</h3>
+              <Link
+                to="/volunteer"
+                className="sidebar-card-link sidebar-card-link-white"
+              >
+                See all
+              </Link>
+            </div>
+            <div className="sidebar-list">
+              {trendingVolunteers.map((o) => {
+                const ngo = getNgo(o.ngoId)
+                return (
+                  <Link
+                    key={o.id}
+                    to="/volunteer"
+                    className="trending-item"
+                  >
+                    <div className="trending-tag">
+                      <Icon name="calendar" size={11} />
+                      {new Date(o.date).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </div>
+                    <div className="trending-title">{o.title}</div>
+                    <div className="trending-meta">
+                      {ngo?.name} · {o.location}
+                    </div>
+                    <div className="trending-slots">
+                      {o.needed - o.registered} slots left
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* 3. YOU MIGHT LIKE — default white header */}
           <div className="sidebar-card">
             <div className="sidebar-card-header">
               <h3 className="sidebar-card-title">You might like</h3>
@@ -247,73 +324,10 @@ export default function Home() {
               )}
             </div>
           </div>
-
-          <div className="sidebar-card">
-            <div className="sidebar-card-header">
-              <h3 className="sidebar-card-title">Volunteer now</h3>
-              <Link to="/volunteer" className="sidebar-card-link">
-                See all
-              </Link>
-            </div>
-            <div className="sidebar-list">
-              {trendingVolunteers.map((o) => {
-                const ngo = getNgo(o.ngoId)
-                return (
-                  <Link
-                    key={o.id}
-                    to="/volunteer"
-                    className="trending-item"
-                  >
-                    <div className="trending-tag">
-                      <Icon name="calendar" size={11} />
-                      {new Date(o.date).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                    </div>
-                    <div className="trending-title">{o.title}</div>
-                    <div className="trending-meta">
-                      {ngo?.name} · {o.location}
-                    </div>
-                    <div className="trending-slots">
-                      {o.needed - o.registered} slots left
-                    </div>
-                  </Link>
-                )
-              })}
-            </div>
-          </div>
-
-          <div className="sidebar-card">
-            <div className="sidebar-card-header">
-              <h3 className="sidebar-card-title">Trending campaigns</h3>
-              <Link to="/donate" className="sidebar-card-link">
-                See all
-              </Link>
-            </div>
-            <div className="sidebar-list">
-              {trendingCampaigns.map((c) => {
-                const ngo = getNgo(c.ngoId)
-                return (
-                  <Link
-                    key={c.id}
-                    to={`/campaign/${c.id}`}
-                    className="trending-item"
-                  >
-                    <div className="trending-tag orange">
-                      <Icon name="trending" size={11} />
-                      {c.donorCount} supporters
-                    </div>
-                    <div className="trending-title">{c.title}</div>
-                    <div className="trending-meta">{ngo?.name}</div>
-                  </Link>
-                )
-              })}
-            </div>
-          </div>
         </aside>
       </div>
 
+      {/* ---------- TESTIMONIALS ---------- */}
       <Testimonials />
     </div>
   )

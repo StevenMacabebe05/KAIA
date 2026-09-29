@@ -16,7 +16,7 @@ const TESTIMONIALS = [
     avatar: 'MR',
     color: '#f97316',
     quote:
-      "I donate to 3 NGOs now, all through one app. The progress bars make it feel real — I know exactly where my money goes.",
+      'I donate to 3 NGOs now, all through one app. The progress bars make it feel real — I know exactly where my money goes.',
     tag: 'Monthly donor',
   },
   {
@@ -25,7 +25,7 @@ const TESTIMONIALS = [
     avatar: 'ST',
     color: '#16a34a',
     quote:
-      "Our volunteer sign-ups tripled in one month. The QR check-in system alone saved us hours of paperwork per event.",
+      'Our volunteer sign-ups tripled in one month. The QR check-in system alone saved us hours of paperwork per event.',
     tag: 'Verified NGO partner',
   },
   {
@@ -39,6 +39,22 @@ const TESTIMONIALS = [
   },
 ]
 
+/* ---------- inline SVG quote mark ---------- */
+function QuoteMark() {
+  return (
+    <svg
+      className="testimonial-quote-svg"
+      width="32"
+      height="32"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M9.5 6C6.5 6 4 8.5 4 11.5V18h6.5v-6.5H7c0-1.4 1.1-2.5 2.5-2.5V6zm10 0c-3 0-5.5 2.5-5.5 5.5V18H20.5v-6.5H17c0-1.4 1.1-2.5 2.5-2.5V6z" />
+    </svg>
+  )
+}
+
 export default function Testimonials() {
   return (
     <section className="testimonials-section">
@@ -46,9 +62,7 @@ export default function Testimonials() {
         <div className="testimonials-eyebrow">
           <Icon name="heart" size={12} /> Community
         </div>
-        <h2 className="testimonials-title">
-          What people are saying
-        </h2>
+        <h2 className="testimonials-title">What people are saying</h2>
         <p className="testimonials-subtitle">
           From volunteers to NGO partners — see how KAIA is being used.
         </p>
@@ -57,7 +71,7 @@ export default function Testimonials() {
       <div className="testimonials-grid">
         {TESTIMONIALS.map((t, i) => (
           <div key={i} className="testimonial-card">
-            <div className="testimonial-quote-mark">"</div>
+            <QuoteMark />
             <p className="testimonial-quote">{t.quote}</p>
             <div className="testimonial-footer">
               <div
