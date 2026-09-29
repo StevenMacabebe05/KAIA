@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CAMPAIGNS } from '../data/campaigns'
 import { NGOS } from '../data/ngos'
 import { useActivity } from '../store/useActivity'
-import { useAuth } from '../context/AuthContext'
 import { useToast } from '../components/Toast'
 import StatusTag from '../components/StatusTag'
 import ProgressBar from '../components/ProgressBar'
@@ -44,29 +43,24 @@ const STATUS_PRIORITY = {
   completed: 3,
 }
 
-/* fake recent donations for the live ticker (demo data) */
-const LIVE_DONATIONS = [
-  { name: 'Maria S.', amount: 500, campaign: 'School Supplies for 500 Kids' },
-  { name: 'Anonymous', amount: 1000, campaign: 'Relief Packs for Typhoon Evacuees' },
-  { name: 'Jose R.', amount: 2500, campaign: 'Coastal Cleanup Drive' },
-  { name: 'Andrea C.', amount: 500, campaign: 'Emergency Medical Supplies' },
-  { name: 'Carlo M.', amount: 100, campaign: 'Mangrove Forest Restoration' },
-  { name: 'Liza T.', amount: 1000, campaign: 'Rescue Van Fuel Fund' },
-  { name: 'Anonymous', amount: 250, campaign: 'School Supplies for 500 Kids' },
+/* top supporters — surnames masked for privacy */
+const TOP_SUPPORTERS = [
+  { firstName: 'Miguel', lastName: 'Reyes', amount: 15500, count: 8 },
+  { firstName: 'Ana', lastName: 'Villanueva', amount: 12000, count: 6 },
+  { firstName: 'Katrina', lastName: 'Lim', amount: 9800, count: 5 },
+  { firstName: 'Ramon', lastName: 'Cruz', amount: 7500, count: 4 },
+  { firstName: 'Sofia', lastName: 'Tan', amount: 6200, count: 7 },
 ]
 
-/* fake top supporters this week */
-const TOP_SUPPORTERS = [
-  { name: 'Miguel Reyes', amount: 15500, count: 8 },
-  { name: 'Ana Villanueva', amount: 12000, count: 6 },
-  { name: 'Katrina Lim', amount: 9800, count: 5 },
-  { name: 'Ramon Cruz', amount: 7500, count: 4 },
-  { name: 'Sofia Tan', amount: 6200, count: 7 },
-]
+/* mask a surname: "Reyes" → "R***s" */
+function maskLastName(name) {
+  if (!name) return ''
+  if (name.length <= 2) return name[0] + '***'
+  return name[0] + '***' + name[name.length - 1]
+}
 
 export default function Donate() {
   const store = useActivity()
-  const { user } = useAuth()
   const toast = useToast()
 
   const [search, setSearch] = useState('')
@@ -76,21 +70,11 @@ export default function Donate() {
   const [view, setView] = useState('grid')
   const [sortOpen, setSortOpen] = useState(false)
   const [visibleCount, setVisibleCount] = useState(6)
-  const [tickerIndex, setTickerIndex] = useState(0)
 
   const getNgo = (id) => NGOS.find((n) => n.id === id)
 
   const extraVersion = store.getExtraCampaigns().length
 
-  /* ---------- rotating live ticker ---------- */
-  useEffect(() => {
-    const t = setInterval(() => {
-      setTickerIndex((i) => (i + 1) % LIVE_DONATIONS.length)
-    }, 3800)
-    return () => clearInterval(t)
-  }, [])
-
-  /* ---------- urgent spotlight ---------- */
   const urgentSpotlight = useMemo(() => {
     const allCampaigns = [...CAMPAIGNS, ...store.getExtraCampaigns()]
     const urgents = allCampaigns
@@ -100,28 +84,10 @@ export default function Donate() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [extraVersion])
 
-  /* ---------- featured NGO (highest supporter count) ---------- */
   const featuredNgo = useMemo(() => {
     return [...NGOS].sort((a, b) => b.supporterCount - a.supporterCount)[0]
   }, [])
 
-  /* ---------- your personal stats ---------- */
-  const myStats = useMemo(() => {
-    if (!user) return null
-    const donations = store.getDonations(user.id)
-    const total = donations.reduce((s, d) => s + d.amount, 0)
-    const uniqueCampaigns = new Set(donations.map((d) => d.campaignId)).size
-    const saves = store.getSaved(user.id).length
-    return {
-      total,
-      count: donations.length,
-      uniqueCampaigns,
-      saves,
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user])
-
-  /* ---------- filtered + sorted ---------- */
   const filtered = useMemo(() => {
     const allCampaigns = [...CAMPAIGNS, ...store.getExtraCampaigns()]
     let list = [...allCampaigns]
@@ -171,7 +137,6 @@ export default function Donate() {
   const visible = filtered.slice(0, visibleCount)
   const hasMore = filtered.length > visibleCount
 
-  /* ---------- share ---------- */
   function handleShare(campaign, e) {
     e.preventDefault()
     e.stopPropagation()
@@ -189,11 +154,8 @@ export default function Donate() {
   const activeSortLabel =
     SORT_OPTIONS.find((o) => o.key === sort)?.label || 'Featured'
 
-  const currentTicker = LIVE_DONATIONS[tickerIndex]
-
   return (
     <div className="container">
-      {/* ---------- PAGE HEADER ---------- */}
       <div className="page-header">
         <h1 className="page-title">Donation campaigns</h1>
         <p className="page-subtitle">
@@ -372,7 +334,6 @@ export default function Donate() {
 
       {/* ---------- MAIN + SIDEBAR LAYOUT ---------- */}
       <div className="donate-layout">
-        {/* LEFT — CAMPAIGN GRID / LIST */}
         <div className="donate-main">
           {filtered.length === 0 ? (
             <div className="empty">
@@ -478,47 +439,9 @@ export default function Donate() {
           )}
         </div>
 
-        {/* RIGHT — SIDEBAR */}
+        {/* ---------- SIDEBAR ---------- */}
         <aside className="donate-sidebar">
-          {/* 1. LIVE TICKER */}
-          <div className="sidebar-card">
-            <div className="sidebar-card-header">
-              <h3 className="sidebar-card-title">
-                <span className="live-dot" />
-                Live donations
-              </h3>
-            </div>
-            <div className="live-ticker">
-              <div key={tickerIndex} className="live-ticker-item">
-                <div className="live-ticker-avatar">
-                  {currentTicker.name.charAt(0)}
-                </div>
-                <div className="live-ticker-body">
-                  <div className="live-ticker-line">
-                    <strong>{currentTicker.name}</strong> donated{' '}
-                    <span className="live-ticker-amount">
-                      ₱{currentTicker.amount.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="live-ticker-campaign">
-                    to {currentTicker.campaign}
-                  </div>
-                </div>
-              </div>
-              <div className="live-ticker-dots">
-                {LIVE_DONATIONS.map((_, i) => (
-                  <span
-                    key={i}
-                    className={`live-ticker-dot ${
-                      i === tickerIndex ? 'active' : ''
-                    }`}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* 2. MATCHING CHALLENGE */}
+          {/* 1. MATCHING CHALLENGE */}
           <div className="matching-card">
             <div className="matching-badge">
               <Icon name="trending" size={12} />
@@ -540,37 +463,7 @@ export default function Donate() {
             </Link>
           </div>
 
-          {/* 3. TOP SUPPORTERS */}
-          <div className="sidebar-card">
-            <div className="sidebar-card-header">
-              <h3 className="sidebar-card-title">Top supporters</h3>
-              <span className="sidebar-card-link">This week</span>
-            </div>
-            <div className="sidebar-list">
-              {TOP_SUPPORTERS.map((s, i) => (
-                <div key={s.name} className="leaderboard-item">
-                  <div
-                    className={`leaderboard-rank ${
-                      i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : ''
-                    }`}
-                  >
-                    {i + 1}
-                  </div>
-                  <div className="leaderboard-info">
-                    <div className="leaderboard-name">{s.name}</div>
-                    <div className="leaderboard-meta">
-                      {s.count} {s.count === 1 ? 'donation' : 'donations'}
-                    </div>
-                  </div>
-                  <div className="leaderboard-amount">
-                    ₱{s.amount.toLocaleString()}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 4. FEATURED NGO */}
+          {/* 2. FEATURED NGO */}
           {featuredNgo && (
             <div className="sidebar-card">
               <div className="sidebar-card-header">
@@ -610,39 +503,43 @@ export default function Donate() {
             </div>
           )}
 
-          {/* 5. YOUR IMPACT (logged in only) */}
-          {user && myStats && (
-            <div className="sidebar-card">
-              <div className="sidebar-card-header">
-                <h3 className="sidebar-card-title">Your impact</h3>
-                <Link to="/my-kaia" className="sidebar-card-link">
-                  View all
-                </Link>
-              </div>
-              <div className="my-impact-grid">
-                <div className="my-impact-cell">
-                  <div className="my-impact-value">
-                    ₱{myStats.total.toLocaleString()}
-                  </div>
-                  <div className="my-impact-label">Donated</div>
-                </div>
-                <div className="my-impact-cell">
-                  <div className="my-impact-value">{myStats.count}</div>
-                  <div className="my-impact-label">Gifts</div>
-                </div>
-                <div className="my-impact-cell">
-                  <div className="my-impact-value">
-                    {myStats.uniqueCampaigns}
-                  </div>
-                  <div className="my-impact-label">Causes</div>
-                </div>
-                <div className="my-impact-cell">
-                  <div className="my-impact-value">{myStats.saves}</div>
-                  <div className="my-impact-label">Saved</div>
-                </div>
-              </div>
+          {/* 3. TOP SUPPORTERS */}
+          <div className="sidebar-card">
+            <div className="sidebar-card-header">
+              <h3 className="sidebar-card-title">Top supporters</h3>
+              <span className="sidebar-card-link">This week</span>
             </div>
-          )}
+            <div className="sidebar-list">
+              {TOP_SUPPORTERS.map((s, i) => (
+                <div key={s.firstName + s.lastName} className="leaderboard-item">
+                  <div
+                    className={`leaderboard-rank ${
+                      i === 0
+                        ? 'gold'
+                        : i === 1
+                        ? 'silver'
+                        : i === 2
+                        ? 'bronze'
+                        : ''
+                    }`}
+                  >
+                    {i + 1}
+                  </div>
+                  <div className="leaderboard-info">
+                    <div className="leaderboard-name">
+                      {s.firstName} {maskLastName(s.lastName)}
+                    </div>
+                    <div className="leaderboard-meta">
+                      {s.count} {s.count === 1 ? 'donation' : 'donations'}
+                    </div>
+                  </div>
+                  <div className="leaderboard-amount">
+                    ₱{s.amount.toLocaleString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </aside>
       </div>
     </div>
