@@ -28,7 +28,6 @@ export default function Home() {
 
   const [feedTab, setFeedTab] = useState('all')
 
-  /* ---------- simple likes map for trending scoring ---------- */
   const likedPosts = (() => {
     try {
       return JSON.parse(localStorage.getItem('kaia_likes') || '{}')
@@ -38,288 +37,284 @@ export default function Home() {
   })()
 
   const followedIds = user ? store.getFollowedNgoIds(user.id) : []
+
   const allPosts = [...POSTS, ...store.getExtraPosts()]
-    .filter((p) => followedIds.includes(p.ngoId))
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+
+  const feedPosts = (() => {
+    if (feedTab === 'following') {
+      return allPosts
+        .filter((p) => followedIds.includes(p.ngoId))
+        .sort((a, b) => {
+          if (a.pinned && !b.pinned) return -1
+          if (!a.pinned && b.pinned) return 1
+          return new Date(b.createdAt) - new Date(a.createdAt)
+        })
+    }
+
+    if (feedTab === 'trending') {
+      return [...allPosts]
+        .map((p) => {
+          const likes = likedPosts[p.id] ? 1 : 0
+          const comments = store.getCommentCount(p.id)
+          const shares = store.getShareCount(p.id)
+          const score = comments * 2 + shares * 3 + likes
+          return { post: p, score }
+        })
+        .sort((a, b) => b.score - a.score)
+        .map((x) => x.post)
+    }
+
+    return [...allPosts].sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1
+      if (!a.pinned && b.pinned) return 1
+      return new Date(b.createdAt) - new Date(a.createdAt)
+    })
+  })()
+
+  const suggestions = NGOS.filter(
+    (n) => !followedIds.includes(n.id)
+  ).slice(0, 5)
+
+  const trendingVolunteers = [...OPPORTUNITIES]
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .slice(0, 4)
+
+  const trendingCampaigns = [...CAMPAIGNS]
+    .sort((a, b) => b.donorCount - a.donorCount)
+    .slice(0, 3)
 
   const getNgo = (id) => NGOS.find((n) => n.id === id)
 
   return (
     <div className="container">
-      {/* ---------- HERO ---------- */}
       <section className="hero-slim">
         <HeroCarousel slides={HERO_SLIDES} interval={5500} />
-
-        <div className="hero-content">
-          <div className="hero-eyebrow">
-            <span className="pulse-dot" />
-            Live now · {NGOS.length} NGOs · {allPosts.length} updates
-          </div>
-
-          <h1>
-            Everyone has something
-            <br />
-            they can{' '}
+        <div className="hero-slim-overlay" />
+        <div className="hero-slim-content">
+          <h1 className="hero-slim-title">
+            Everyone has something they can{' '}
             <span className="gradient-text-orange">contribute</span>.
           </h1>
-
-          <p>
-            KAIA connects you with verified Filipino NGOs — donate,
-            volunteer, follow, or simply spread awareness. Support
-            happens in many forms.
+          <p className="hero-slim-subtitle">
+            KAIA connects you with verified Filipino NGOs — donate, volunteer,
+            follow, or simply spread awareness. Support happens in many forms.
           </p>
-
-          <div className="hero-actions">
-            <Link
-              to="/discover"
-              className="btn btn-white btn-lg btn-shimmer"
-            >
-              Discover NGOs
-              <Icon name="arrow-right" size={16} />
-            </Link>
-
-            <Link to="/donate" className="btn btn-outline-white btn-lg">
-              Browse campaigns
-            </Link>
-          </div>
-
-          <div className="hero-stats">
-            <div className="hero-stat">
-              <div className="hero-stat-value">6</div>
-              <div className="hero-stat-label">Verified NGOs</div>
-            </div>
-
-            <div className="hero-stat">
-              <div className="hero-stat-value">₱250k+</div>
-              <div className="hero-stat-label">Raised this month</div>
-            </div>
-
-            <div className="hero-stat">
-              <div className="hero-stat-value">1,200+</div>
-              <div className="hero-stat-label">Volunteer hours</div>
-            </div>
-          </div>
         </div>
       </section>
 
-      {/* ---------- FEED HEADER ---------- */}
-      <div className="section-heading">
-        <h2>From NGOs you follow</h2>
-
-        <div className="section-heading-bar" />
-
-        <Link to="/discover" className="btn btn-ghost btn-sm">
-          Follow to See More
-        </Link>
-      </div>
-
-      {/* ---------- FEED ---------- */}
-      {allPosts.length === 0 ? (
-        <EmptyState
-          icon="inbox"
-          title="Your feed is empty"
-          message="Follow NGOs to see their updates here."
-          action={
-            <Link
-              to="/discover"
-              style={{
-                marginTop: 16,
-                display: 'inline-block',
-              }}
-            >
-              <button className="btn btn-primary">
-                Discover NGOs
-              </button>
-            </Link>
-          }
-        />
-      ) : (
-        <div className="grid grid-2">
-          {allPosts.map((post) => {
-            const ngo = getNgo(post.ngoId)
-
-            if (!ngo) return null
-
-            return (
-              <article
-                key={post.id}
-                className="card card-hover"
-              >
-                <div
-                  className="row"
-                  style={{ marginBottom: 14 }}
-                >
-                  <img
-                    src={ngo.logo}
-                    alt={ngo.name}
-                    style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 10,
-                      objectFit: 'cover',
-                    }}
-                  />
-
-                  <div
-                    style={{
-                      flex: 1,
-                      minWidth: 0,
-                    }}
-                  >
-                    <Link
-                      to={`/ngo/${ngo.id}`}
-                      style={{
-                        fontWeight: 700,
-                        color: 'var(--ink-900)',
-                        fontSize: 14,
-                      }}
-                    >
-                      {ngo.name}
-                    </Link>
-
-                    <div style={{ marginTop: 2 }}>
-                      <VerifiedBadge verified={ngo.verified} />
-                    </div>
-                  </div>
-                </div>
-
-                <p
-                  style={{
-                    margin: '0 0 14px',
-                    fontSize: 14,
-                    lineHeight: 1.55,
-                  }}
-                >
-                  {post.content}
-                </p>
-
-                {post.image && (
-                  <img
-                    src={post.image}
-                    alt=""
-                    style={{
-                      width: '100%',
-                      borderRadius: 10,
-                      marginBottom: 14,
-                    }}
-                  />
-                )}
-
-                <div
-                  style={{
-                    display: 'flex',
-                    gap: 8,
-                  }}
-                >
-                  <Link
-                    to={`/ngo/${ngo.id}`}
-                    style={{ flex: 1 }}
-                  >
-                    <button className="btn btn-ghost btn-block btn-sm">
-                      View NGO
-                    </button>
-                  </Link>
-
-                  <Link
-                    to="/donate"
-                    style={{ flex: 1 }}
-                  >
-                    <button className="btn btn-accent btn-block btn-sm">
-                      <Icon name="heart" size={14} />
-                      Donate
-                    </button>
-                  </Link>
-                </div>
-              </article>
-            )
-          })}
-        </div>
-      )}
-
-      {/* ---------- SUGGESTED FOR YOU ---------- */}
-      {suggestedNgos.length > 0 && (
-        <section style={{ marginTop: 48 }}>
-          <div className="section-heading">
-            <h2>Suggested for You</h2>
-
-            <div className="section-heading-bar" />
-
-            <Link
-              to="/discover"
-              className="btn btn-ghost btn-sm"
-            >
-              See All
+      <div className="home-layout">
+        <div className="home-feed">
+          <div className="home-section-header">
+            <div>
+              <h2 className="home-section-title">Your Feed</h2>
+              <p className="home-section-subtitle">
+                Updates from the NGOs you follow
+              </p>
+            </div>
+            <Link to="/discover" className="btn btn-ghost btn-sm">
+              Discover more
             </Link>
           </div>
 
-          <div className="grid grid-3">
-            {suggestedNgos.map((ngo) => (
-              <article
-                key={ngo.id}
-                className="card card-hover"
+          <div className="feed-tabs">
+            {[
+              { key: 'all', label: 'All', icon: 'globe' },
+              { key: 'following', label: 'Following', icon: 'users' },
+              { key: 'trending', label: 'Trending', icon: 'trending' },
+            ].map((t) => (
+              <button
+                key={t.key}
+                className={`feed-tab ${
+                  feedTab === t.key ? 'active' : ''
+                }`}
+                onClick={() => setFeedTab(t.key)}
+                type="button"
               >
-                <div
-                  className="row"
-                  style={{ marginBottom: 14 }}
-                >
-                  <img
-                    src={ngo.logo}
-                    alt={ngo.name}
-                    style={{
-                      width: 50,
-                      height: 50,
-                      borderRadius: 10,
-                      objectFit: 'cover',
-                    }}
-                  />
-
-                  <div
-                    style={{
-                      flex: 1,
-                      minWidth: 0,
-                    }}
-                  >
-                    <Link
-                      to={`/ngo/${ngo.id}`}
-                      style={{
-                        fontWeight: 700,
-                        color: 'var(--ink-900)',
-                        fontSize: 14,
-                      }}
-                    >
-                      {ngo.name}
-                    </Link>
-
-                    <div style={{ marginTop: 2 }}>
-                      <VerifiedBadge
-                        verified={ngo.verified}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {ngo.description && (
-                  <p
-                    style={{
-                      margin: '0 0 14px',
-                      fontSize: 13,
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    {ngo.description}
-                  </p>
-                )}
-
-                <Link to={`/ngo/${ngo.id}`}>
-                  <button className="btn btn-ghost btn-block btn-sm">
-                    View NGO
-                  </button>
-                </Link>
-              </article>
+                <Icon name={t.icon} size={14} />
+                {t.label}
+              </button>
             ))}
           </div>
-        </section>
-      )}
+
+          {feedPosts.length === 0 ? (
+            <EmptyState
+              icon="inbox"
+              title={
+                feedTab === 'following'
+                  ? 'Your feed is empty'
+                  : 'No posts yet'
+              }
+              message={
+                feedTab === 'following'
+                  ? 'Follow NGOs to see their updates here.'
+                  : 'Check back soon for new updates.'
+              }
+              suggestions={
+                feedTab === 'following'
+                  ? [
+                      {
+                        label: 'Discover NGOs',
+                        to: '/discover',
+                        icon: 'globe',
+                      },
+                      {
+                        label: 'Browse campaigns',
+                        to: '/donate',
+                        icon: 'heart',
+                      },
+                      {
+                        label: 'Find volunteer work',
+                        to: '/volunteer',
+                        icon: 'hand',
+                      },
+                    ]
+                  : undefined
+              }
+            />
+          ) : (
+            <div className="home-feed-list">
+              {feedPosts.map((post) => {
+                const ngo = getNgo(post.ngoId)
+                if (!ngo) return null
+                return (
+                  <FeedPost
+                    key={post.id}
+                    post={post}
+                    ngo={ngo}
+                    showNgoHeader={true}
+                  />
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        <aside className="home-sidebar">
+          <div className="sidebar-card">
+            <div className="sidebar-card-header">
+              <h3 className="sidebar-card-title">You might like</h3>
+            </div>
+            <div className="sidebar-list">
+              {suggestions.length === 0 ? (
+                <div className="sidebar-empty">
+                  You're following all our NGOs!
+                </div>
+              ) : (
+                suggestions.map((ngo) => (
+                  <div key={ngo.id} className="suggestion-item">
+                    <Link to={`/ngo/${ngo.id}`} className="suggestion-left">
+                      <img
+                        src={ngo.logo}
+                        alt=""
+                        className="suggestion-avatar"
+                      />
+                      <div className="suggestion-info">
+                        <div className="suggestion-name">
+                          {ngo.name}
+                          {ngo.verified && (
+                            <span className="suggestion-verified">
+                              <Icon name="check" size={10} />
+                            </span>
+                          )}
+                        </div>
+                        <div className="suggestion-cats">
+                          {ngo.categories[0]}
+                        </div>
+                      </div>
+                    </Link>
+                    <button
+                      className="btn btn-neutral btn-sm suggestion-follow"
+                      onClick={() => {
+                        if (!user) {
+                          toast.push('Log in to follow NGOs', 'info')
+                          return
+                        }
+                        store.toggleFollow(user.id, ngo.id)
+                        store.addNotification(user.id, {
+                          type: 'follow',
+                          title: `You followed ${ngo.name}`,
+                          body: 'Their posts will now appear in your feed.',
+                          link: `/ngo/${ngo.id}`,
+                        })
+                        toast.push(`Following ${ngo.name}`, 'success')
+                      }}
+                      type="button"
+                    >
+                      Follow
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="sidebar-card">
+            <div className="sidebar-card-header">
+              <h3 className="sidebar-card-title">Volunteer now</h3>
+              <Link to="/volunteer" className="sidebar-card-link">
+                See all
+              </Link>
+            </div>
+            <div className="sidebar-list">
+              {trendingVolunteers.map((o) => {
+                const ngo = getNgo(o.ngoId)
+                return (
+                  <Link
+                    key={o.id}
+                    to="/volunteer"
+                    className="trending-item"
+                  >
+                    <div className="trending-tag">
+                      <Icon name="calendar" size={11} />
+                      {new Date(o.date).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </div>
+                    <div className="trending-title">{o.title}</div>
+                    <div className="trending-meta">
+                      {ngo?.name} · {o.location}
+                    </div>
+                    <div className="trending-slots">
+                      {o.needed - o.registered} slots left
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="sidebar-card">
+            <div className="sidebar-card-header">
+              <h3 className="sidebar-card-title">Trending campaigns</h3>
+              <Link to="/donate" className="sidebar-card-link">
+                See all
+              </Link>
+            </div>
+            <div className="sidebar-list">
+              {trendingCampaigns.map((c) => {
+                const ngo = getNgo(c.ngoId)
+                return (
+                  <Link
+                    key={c.id}
+                    to={`/campaign/${c.id}`}
+                    className="trending-item"
+                  >
+                    <div className="trending-tag orange">
+                      <Icon name="trending" size={11} />
+                      {c.donorCount} supporters
+                    </div>
+                    <div className="trending-title">{c.title}</div>
+                    <div className="trending-meta">{ngo?.name}</div>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <Testimonials />
     </div>
   )
 }
