@@ -498,15 +498,15 @@ export default function Volunteer() {
         {/* ---------- SIDEBAR ---------- */}
         <aside className="volunteer-sidebar">
           {/* 1. YOUR UPCOMING EVENTS */}
-          <div className="sidebar-card">
-            <div className="sidebar-card-header">
-              <h3 className="sidebar-card-title">Your upcoming events</h3>
-              {myUpcoming.length > 0 && (
-                <Link to="/my-kaia" className="sidebar-card-link">
-                  View all
-                </Link>
-              )}
-            </div>
+        <div className="sidebar-card">
+          <div className="sidebar-card-header sidebar-card-header-blue">
+            <h3 className="sidebar-card-title">Your upcoming events</h3>
+            {myUpcoming.length > 0 && (
+              <Link to="/my-kaia" className="sidebar-card-link sidebar-card-link-white">
+                View all
+              </Link>
+            )}
+          </div>
             {myUpcoming.length === 0 ? (
               <div className="sidebar-empty">
                 {user
@@ -544,7 +544,7 @@ export default function Volunteer() {
 
           {/* 2. NEEDS VOLUNTEERS — solid blue with numbers */}
           <div className="needs-volunteers-card">
-            <div className="needs-volunteers-header">
+            <div className="needs-volunteers-header needs-volunteers-header-orange">
               <h3 className="needs-volunteers-title">Needs volunteers</h3>
               <span className="needs-volunteers-subtitle">This month</span>
             </div>

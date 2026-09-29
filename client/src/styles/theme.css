@@ -7804,35 +7804,32 @@ body,
   border-radius: 999px;
   background: var(--blue-700);
 }
-
 /* =========================================================
-   VOLUNTEER — NEEDS VOLUNTEERS (SOLID BLUE, NUMBERS)
+   VOLUNTEER — NEEDS VOLUNTEERS (WHITE BACKGROUND)
    ========================================================= */
 
 .needs-volunteers-card {
-  background: linear-gradient(135deg, #1e40d8 0%, #12277a 100%);
+  background: var(--white);
+  border: 1px solid var(--ink-100);
   border-radius: var(--radius-lg);
-  padding: 22px 22px 12px;
-  color: white;
-  position: relative;
+  padding: 4px 0;
+  color: var(--ink-900);
   overflow: hidden;
-  box-shadow: 0 12px 28px rgba(30, 64, 216, 0.25);
 }
 
 .needs-volunteers-header {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin-bottom: 16px;
-  position: relative;
-  z-index: 1;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--ink-100);
 }
 
 .needs-volunteers-title {
   font-size: 15px;
   font-weight: 800;
   margin: 0;
-  color: white;
+  color: var(--ink-900);
   letter-spacing: -0.01em;
 }
 
@@ -7841,15 +7838,12 @@ body,
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  opacity: 0.7;
-  color: white;
+  color: var(--ink-500);
 }
 
 .needs-volunteers-list {
   display: flex;
   flex-direction: column;
-  position: relative;
-  z-index: 1;
 }
 
 .needs-volunteers-row {
@@ -7857,15 +7851,13 @@ body,
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  padding: 12px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-  background: none;
-  border-top: 0;
-  border-left: 0;
-  border-right: 0;
+  padding: 12px 20px;
+  border: 0;
+  border-bottom: 1px solid var(--ink-50);
+  background: transparent;
   font-family: inherit;
   cursor: pointer;
-  transition: opacity 0.15s ease;
+  transition: background 0.15s ease;
   text-align: left;
   width: 100%;
 }
@@ -7875,13 +7867,13 @@ body,
 }
 
 .needs-volunteers-row:hover {
-  opacity: 0.85;
+  background: var(--ink-50);
 }
 
 .needs-volunteers-name {
   font-size: 13.5px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--ink-900);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -7890,9 +7882,9 @@ body,
 }
 
 .needs-volunteers-number {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
-  color: white;
+  color: var(--blue-700);
   letter-spacing: -0.02em;
   line-height: 1;
   display: inline-flex;
@@ -7906,12 +7898,82 @@ body,
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  opacity: 0.7;
+  color: var(--ink-500);
 }
 
 .needs-volunteers-empty {
   font-size: 12.5px;
-  color: rgba(255, 255, 255, 0.7);
-  padding: 12px 0;
+  color: var(--ink-500);
+  padding: 14px 20px;
   font-weight: 600;
+}
+
+/* dark mode */
+[data-theme='dark'] .needs-volunteers-card {
+  background: #0f1729;
+  border-color: var(--ink-100);
+}
+
+[data-theme='dark'] .needs-volunteers-row:hover {
+  background: var(--blue-50);
+}
+
+[data-theme='dark'] .needs-volunteers-name {
+  color: var(--ink-900);
+}
+
+[data-theme='dark'] .needs-volunteers-number {
+  color: #60a5fa;
+}
+
+[data-theme='dark'] .sidebar-card-header-blue {
+  background: linear-gradient(135deg, #2563eb 0%, #0a1440 100%);
+}
+
+
+/* =========================================================
+   VOLUNTEER — BLUE HEADER FOR UPCOMING EVENTS
+   ========================================================= */
+
+.sidebar-card-header-blue {
+  background: linear-gradient(135deg, #1e40d8 0%, #12277a 100%);
+  border-bottom: 0;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: 16px 18px;
+}
+
+.sidebar-card-header-blue .sidebar-card-title {
+  color: #ffffff;
+}
+
+.sidebar-card-link-white {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.sidebar-card-link-white:hover {
+  color: #ffffff !important;
+}
+
+/* =========================================================
+   NEEDS VOLUNTEERS — ORANGE GRADIENT HEADER
+   ========================================================= */
+
+.needs-volunteers-header-orange {
+  background: linear-gradient(135deg, #f97316 0%, #ea6a0a 100%);
+  border-bottom: 0;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: 16px 20px;
+}
+
+.needs-volunteers-header-orange .needs-volunteers-title {
+  color: #ffffff;
+}
+
+.needs-volunteers-header-orange .needs-volunteers-subtitle {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* dark mode keeps the same orange gradient */
+[data-theme='dark'] .needs-volunteers-header-orange {
+  background: linear-gradient(135deg, #ea6a0a 0%, #b45309 100%);
 }
