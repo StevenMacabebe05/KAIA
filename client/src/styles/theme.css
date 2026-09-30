@@ -9691,3 +9691,161 @@ body,
 [data-theme='dark'] .ngo-dash-snapshot-row strong {
   color: var(--ink-900);
 }
+
+/* =========================================================
+   FEED POST — COMMENT PREVIEW (REDESIGN)
+   ========================================================= */
+
+.feed-comment-preview {
+  margin-top: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--ink-100);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ---------- one comment row ---------- */
+.feed-comment {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+/* ---------- avatar (initials in a small circle) ---------- */
+.feed-comment-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1e40d8, #12277a);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* ---------- bubble (name + text) ---------- */
+.feed-comment-bubble {
+  background: var(--ink-50);
+  border-radius: 14px;
+  padding: 10px 14px;
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.feed-comment-name {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--ink-900);
+  line-height: 1.2;
+  margin-bottom: 3px;
+}
+
+.feed-comment-text {
+  font-size: 13.5px;
+  color: var(--ink-700);
+  line-height: 1.5;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+/* ---------- "View all N comments" ---------- */
+.feed-view-comments {
+  display: inline-block;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--blue-700);
+  padding-left: 44px; /* aligns under the bubble, not the avatar */
+  cursor: pointer;
+}
+
+.feed-view-comments:hover {
+  color: var(--blue-900);
+  text-decoration: underline;
+}
+
+/* ---------- inline comment input (when commenting) ---------- */
+.feed-comment-input-wrap {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ink-100);
+}
+
+.feed-comment-input-wrap .feed-comment-avatar {
+  width: 34px;
+  height: 34px;
+}
+
+.feed-comment-input {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--ink-100);
+  background: var(--ink-50);
+  color: var(--ink-900);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.feed-comment-input::placeholder {
+  color: var(--ink-500);
+}
+
+.feed-comment-input:focus {
+  border-color: var(--blue-700);
+  background: var(--white);
+  box-shadow: 0 0 0 3px rgba(30, 64, 216, 0.08);
+}
+
+.feed-comment-input-wrap .btn {
+  flex-shrink: 0;
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-size: 12.5px;
+}
+
+/* ---------- dark mode ---------- */
+[data-theme='dark'] .feed-comment-preview {
+  border-color: var(--ink-100);
+}
+
+[data-theme='dark'] .feed-comment-bubble {
+  background: #16203a;
+}
+
+[data-theme='dark'] .feed-comment-name {
+  color: var(--ink-900);
+}
+
+[data-theme='dark'] .feed-comment-text {
+  color: var(--ink-700);
+}
+
+[data-theme='dark'] .feed-view-comments {
+  color: #60a5fa;
+}
+
+[data-theme='dark'] .feed-comment-input-wrap {
+  border-color: var(--ink-100);
+}
+
+[data-theme='dark'] .feed-comment-input {
+  background: #16203a;
+  border-color: var(--ink-100);
+  color: var(--ink-900);
+}
+
+[data-theme='dark'] .feed-comment-input:focus {
+  background: #0b1220;
+  border-color: #60a5fa;
+}
