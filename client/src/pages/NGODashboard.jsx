@@ -80,23 +80,65 @@ export default function NGODashboard() {
   const checkins = store.getCheckInsForNgo(opportunityIds)
   const applications = store.getApplicationsForNgo(opportunityIds)
 
-  const TILES = [
-    { key: 'inbox', label: 'Inbox', icon: 'message-circle', link: '/inbox' },
-    { key: 'scan', label: 'Scan check-in', icon: 'search', link: '/scan' },
+  /* ---------- sidebar tiles ---------- */
+  const CREATE_TILES = [
     { key: 'post', label: 'Create Post', icon: 'megaphone' },
     { key: 'campaign', label: 'Create Campaign', icon: 'heart' },
     { key: 'volunteer', label: 'Create Volunteer', icon: 'hand' },
     { key: 'event', label: 'Create Event', icon: 'calendar' },
-    { key: 'applications', label: 'View Applications', icon: 'inbox' },
-    { key: 'manage-campaigns', label: 'Manage Campaigns', icon: 'chart' },
-    { key: 'manage-volunteers', label: 'Manage Volunteers', icon: 'users' },
-    { key: 'attendance', label: 'View Attendance', icon: 'check-circle' },
-    { key: 'updates', label: 'View Updates', icon: 'inbox' },
-    { key: 'engagement', label: 'View Engagement', icon: 'trending' },
+  ]
+
+  const MANAGE_TILES = [
+    {
+      key: 'inbox',
+      label: 'Inbox',
+      icon: 'message-circle',
+      link: '/inbox',
+      badge: store.getNgoUnreadTotal(user.ngoId),
+      badgeColor: 'var(--red-600)',
+    },
+    {
+      key: 'scan',
+      label: 'Scan check-in',
+      icon: 'search',
+      link: '/scan',
+    },
+    {
+      key: 'applications',
+      label: 'View Applications',
+      icon: 'inbox',
+      badge: applications.length,
+      badgeColor: 'var(--orange-500)',
+    },
+    {
+      key: 'manage-campaigns',
+      label: 'Manage Campaigns',
+      icon: 'chart',
+    },
+    {
+      key: 'manage-volunteers',
+      label: 'Manage Volunteers',
+      icon: 'users',
+    },
+    {
+      key: 'attendance',
+      label: 'View Attendance',
+      icon: 'check-circle',
+    },
+    {
+      key: 'updates',
+      label: 'View Updates',
+      icon: 'inbox',
+    },
+    {
+      key: 'engagement',
+      label: 'View Engagement',
+      icon: 'trending',
+    },
   ]
 
   return (
-    <div className="container">
+    <div className="container-wide">
       <div className="page-header">
         <h1 className="page-title">NGO Dashboard</h1>
         <p className="page-subtitle">
@@ -105,226 +147,208 @@ export default function NGODashboard() {
         </p>
       </div>
 
-      {/* ---------- stat cards ---------- */}
-      <div className="stat-row" style={{ marginBottom: 24 }}>
-        <div className="stat-card-rich">
-          <div className="stat-rich-top">
-            <div>
-              <div className="stat-rich-value">
-                ₱<AnimatedCounter value={totalRaised} />
-              </div>
-              <div className="stat-rich-label">Total raised</div>
+      {/* ---------- TWO-COLUMN LAYOUT ---------- */}
+      <div className="ngo-dash-layout">
+        {/* ================= LEFT — QUICK ACTIONS SIDEBAR ================= */}
+        <aside className="ngo-dash-sidebar">
+          {/* Create block */}
+          <div className="ngo-dash-block">
+            <div className="ngo-dash-block-header ngo-dash-block-header-blue">
+              <Icon name="plus" size={14} />
+              <span>Create</span>
             </div>
-            <Sparkline data={donationSpark} color="#1e40d8" />
+            <div className="ngo-dash-block-list">
+              {CREATE_TILES.map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => setModal(t.key)}
+                  className="ngo-dash-tile"
+                  type="button"
+                >
+                  <span className="ngo-dash-tile-icon">
+                    <Icon name={t.icon} size={16} />
+                  </span>
+                  <span className="ngo-dash-tile-label">{t.label}</span>
+                  <Icon
+                    name="chevron-right"
+                    size={14}
+                    color="var(--ink-300)"
+                  />
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="stat-rich-delta">↑ 12.4% vs last month</div>
-        </div>
 
-        <div className="stat-card-rich">
-          <div className="stat-rich-top">
-            <div>
-              <div className="stat-rich-value">
-                <AnimatedCounter value={activeCampaigns} />
-              </div>
-              <div className="stat-rich-label">Active campaigns</div>
+          {/* Manage block */}
+          <div className="ngo-dash-block">
+            <div className="ngo-dash-block-header ngo-dash-block-header-orange">
+              <Icon name="shield" size={14} />
+              <span>Manage</span>
             </div>
-            <Sparkline data={[1, 2, 2, 3, 3, 3]} color="#f97316" />
-          </div>
-          <div className="stat-rich-delta">↑ 1 new this month</div>
-        </div>
+            <div className="ngo-dash-block-list">
+              {MANAGE_TILES.map((t) => {
+                const content = (
+                  <>
+                    <span className="ngo-dash-tile-icon">
+                      <Icon name={t.icon} size={16} />
+                    </span>
+                    <span className="ngo-dash-tile-label">{t.label}</span>
+                    {t.badge > 0 && (
+                      <span
+                        className="ngo-dash-tile-badge"
+                        style={{ background: t.badgeColor }}
+                      >
+                        {t.badge}
+                      </span>
+                    )}
+                    <Icon
+                      name="chevron-right"
+                      size={14}
+                      color="var(--ink-300)"
+                    />
+                  </>
+                )
 
-        <div className="stat-card-rich">
-          <div className="stat-rich-top">
-            <div>
-              <div className="stat-rich-value">
-                <AnimatedCounter value={2300} />
-              </div>
-              <div className="stat-rich-label">Supporters</div>
-            </div>
-            <Sparkline
-              data={[1800, 1950, 2050, 2100, 2200, 2300]}
-              color="#1e40d8"
-            />
-          </div>
-          <div className="stat-rich-delta">↑ 4.3% this week</div>
-        </div>
+                if (t.link) {
+                  return (
+                    <Link
+                      key={t.key}
+                      to={t.link}
+                      className="ngo-dash-tile"
+                    >
+                      {content}
+                    </Link>
+                  )
+                }
 
-        <div className="stat-card-rich">
-          <div className="stat-rich-top">
-            <div>
-              <div className="stat-rich-value">
-                <AnimatedCounter value={checkins.length} />
-              </div>
-              <div className="stat-rich-label">Event check-ins</div>
+                return (
+                  <button
+                    key={t.key}
+                    onClick={() => setModal(t.key)}
+                    className="ngo-dash-tile"
+                    type="button"
+                  >
+                    {content}
+                  </button>
+                )
+              })}
             </div>
-            <Sparkline
-              data={[0, 0, 1, 2, 2, checkins.length]}
-              color="#16a34a"
-            />
           </div>
-          <div className="stat-rich-delta">
-            {checkins.length > 0 ? '↑ new this month' : 'No check-ins yet'}
+
+
+        </aside>
+
+        {/* ================= RIGHT — MAIN DASHBOARD ================= */}
+        <div className="ngo-dash-main">
+          {/* Stat cards */}
+          <div className="stat-row" style={{ marginBottom: 24 }}>
+            <div className="stat-card-rich">
+              <div className="stat-rich-top">
+                <div>
+                  <div className="stat-rich-value">
+                    ₱<AnimatedCounter value={totalRaised} />
+                  </div>
+                  <div className="stat-rich-label">Total raised</div>
+                </div>
+                <Sparkline data={donationSpark} color="#1e40d8" />
+              </div>
+              <div className="stat-rich-delta">↑ 12.4% vs last month</div>
+            </div>
+
+            <div className="stat-card-rich">
+              <div className="stat-rich-top">
+                <div>
+                  <div className="stat-rich-value">
+                    <AnimatedCounter value={activeCampaigns} />
+                  </div>
+                  <div className="stat-rich-label">Active campaigns</div>
+                </div>
+                <Sparkline data={[1, 2, 2, 3, 3, 3]} color="#f97316" />
+              </div>
+              <div className="stat-rich-delta">↑ 1 new this month</div>
+            </div>
+
+            <div className="stat-card-rich">
+              <div className="stat-rich-top">
+                <div>
+                  <div className="stat-rich-value">
+                    <AnimatedCounter value={2300} />
+                  </div>
+                  <div className="stat-rich-label">Supporters</div>
+                </div>
+                <Sparkline
+                  data={[1800, 1950, 2050, 2100, 2200, 2300]}
+                  color="#1e40d8"
+                />
+              </div>
+              <div className="stat-rich-delta">↑ 4.3% this week</div>
+            </div>
+
+            <div className="stat-card-rich">
+              <div className="stat-rich-top">
+                <div>
+                  <div className="stat-rich-value">
+                    <AnimatedCounter value={checkins.length} />
+                  </div>
+                  <div className="stat-rich-label">Event check-ins</div>
+                </div>
+                <Sparkline
+                  data={[0, 0, 1, 2, 2, checkins.length]}
+                  color="#16a34a"
+                />
+              </div>
+              <div className="stat-rich-delta">
+                {checkins.length > 0
+                  ? '↑ new this month'
+                  : 'No check-ins yet'}
+              </div>
+            </div>
+          </div>
+
+          {/* Charts row */}
+          <div className="chart-grid">
+            <div className="chart-card">
+              <div className="chart-card-header">
+                <div>
+                  <h3 className="chart-title">Donations over time</h3>
+                  <p className="chart-subtitle">
+                    Last 6 months of contributions
+                  </p>
+                </div>
+                <span className="chart-badge">↑ 12.4%</span>
+              </div>
+              <DonationLineChart data={DONATION_TREND} />
+            </div>
+
+            <div className="chart-card">
+              <div className="chart-card-header">
+                <div>
+                  <h3 className="chart-title">Campaign status</h3>
+                  <p className="chart-subtitle">Live breakdown</p>
+                </div>
+              </div>
+              <StatusDonut data={statusDonutData} />
+            </div>
+          </div>
+
+          <div className="chart-card" style={{ marginBottom: 24 }}>
+            <div className="chart-card-header">
+              <div>
+                <h3 className="chart-title">Campaign performance</h3>
+                <p className="chart-subtitle">
+                  Raised vs goal for each active campaign
+                </p>
+              </div>
+              <span className="chart-badge orange">
+                {campaigns.length} campaigns
+              </span>
+            </div>
+            <CampaignBarChart data={campaignChartData} />
           </div>
         </div>
       </div>
 
-      {/* ---------- charts ---------- */}
-      <div className="chart-grid">
-        <div className="chart-card">
-          <div className="chart-card-header">
-            <div>
-              <h3 className="chart-title">Donations over time</h3>
-              <p className="chart-subtitle">
-                Last 6 months of contributions
-              </p>
-            </div>
-            <span className="chart-badge">↑ 12.4%</span>
-          </div>
-          <DonationLineChart data={DONATION_TREND} />
-        </div>
-
-        <div className="chart-card">
-          <div className="chart-card-header">
-            <div>
-              <h3 className="chart-title">Campaign status</h3>
-              <p className="chart-subtitle">Live breakdown</p>
-            </div>
-          </div>
-          <StatusDonut data={statusDonutData} />
-        </div>
-      </div>
-
-      <div className="chart-card" style={{ marginBottom: 24 }}>
-        <div className="chart-card-header">
-          <div>
-            <h3 className="chart-title">Campaign performance</h3>
-            <p className="chart-subtitle">
-              Raised vs goal for each active campaign
-            </p>
-          </div>
-          <span className="chart-badge orange">
-            {campaigns.length} campaigns
-          </span>
-        </div>
-        <CampaignBarChart data={campaignChartData} />
-      </div>
-
-      {/* ---------- quick actions ---------- */}
-      <div className="page-header" style={{ marginTop: 32 }}>
-        <h2 className="page-title" style={{ fontSize: 22 }}>
-          Quick actions
-        </h2>
-        <p className="page-subtitle">
-          Everything you need to run your organization on KAIA.
-        </p>
-      </div>
-
-      <div className="grid grid-4">
-        {TILES.map((t) => {
-          const content = (
-            <>
-              <div
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 10,
-                  background: 'var(--blue-50)',
-                  color: 'var(--blue-700)',
-                  display: 'grid',
-                  placeItems: 'center',
-                  marginBottom: 14,
-                  position: 'relative',
-                }}
-              >
-                <Icon name={t.icon} size={20} />
-{t.key === 'applications' && applications.length > 0 && (
-  <span
-    style={{
-      position: 'absolute',
-      top: -4,
-      right: -4,
-      minWidth: 16,
-      height: 16,
-      borderRadius: 999,
-      background: 'var(--orange-500)',
-      color: 'white',
-      fontSize: 9,
-      fontWeight: 800,
-      display: 'grid',
-      placeItems: 'center',
-      padding: '0 4px',
-      border: '2px solid white',
-    }}
-  >
-    {applications.length}
-  </span>
-)}
-{t.key === 'inbox' && store.getNgoUnreadTotal(user.ngoId) > 0 && (
-  <span
-    style={{
-      position: 'absolute',
-      top: -4,
-      right: -4,
-      minWidth: 16,
-      height: 16,
-      borderRadius: 999,
-      background: 'var(--red-600)',
-      color: 'white',
-      fontSize: 9,
-      fontWeight: 800,
-      display: 'grid',
-      placeItems: 'center',
-      padding: '0 4px',
-      border: '2px solid white',
-    }}
-  >
-    {store.getNgoUnreadTotal(user.ngoId)}
-  </span>
-)}
-              </div>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>{t.label}</div>
-            </>
-          )
-
-          if (t.link) {
-            return (
-              <Link
-                key={t.key}
-                to={t.link}
-                className="card card-hover"
-                style={{
-                  textAlign: 'left',
-                  border: '1px solid var(--ink-100)',
-                  background: 'white',
-                  color: 'inherit',
-                  display: 'block',
-                }}
-              >
-                {content}
-              </Link>
-            )
-          }
-
-          return (
-            <button
-              key={t.key}
-              onClick={() => setModal(t.key)}
-              className="card card-hover"
-              style={{
-                textAlign: 'left',
-                cursor: 'pointer',
-                border: '1px solid var(--ink-100)',
-                background: 'white',
-                fontFamily: 'inherit',
-              }}
-            >
-              {content}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* ---------- modals ---------- */}
+      {/* ---------- MODALS ---------- */}
       {modal === 'post' && (
         <PostModal
           onClose={() => setModal(null)}
@@ -547,7 +571,9 @@ function ApplicationsModal({ applications, opportunities, onClose }) {
                       <div className="applicant-value">{a.address}</div>
                     </div>
                     <div>
-                      <div className="applicant-label">Emergency contact</div>
+                      <div className="applicant-label">
+                        Emergency contact
+                      </div>
                       <div className="applicant-value">
                         {a.emergencyName} · {a.emergencyPhone}
                       </div>
@@ -576,7 +602,8 @@ function ApplicationsModal({ applications, opportunities, onClose }) {
 
                   {a.cancellationReason && (
                     <div className="applicant-cancellation">
-                      <strong>Cancelled reason:</strong> {a.cancellationReason}
+                      <strong>Cancelled reason:</strong>{' '}
+                      {a.cancellationReason}
                       <div
                         className="text-muted"
                         style={{ marginTop: 2, fontSize: 11 }}
@@ -634,328 +661,55 @@ function PostModal({ onClose, onSave }) {
 }
 
 function CampaignModal({ onClose, onSave }) {
-  const [form, setForm] = useState({
-    title: '',
-    category: 'Education',
-    status: 'active',
-    goal: '',
-    deadline: '',
-    location: '',
-    beneficiaries: '',
-    description: '',
-    image: '',
-  })
-  const [errors, setErrors] = useState({})
-
-  const CATEGORIES = [
-    'Education',
-    'Children & Youth',
-    'Animal Welfare',
-    'Environment',
-    'Health',
-    'Disaster Relief',
-    'Community Development',
-    'Poverty Reduction',
-    'Humanitarian Aid',
-  ]
-
-  const STATUSES = [
-    { key: 'active', label: 'Active', color: 'var(--blue-700)' },
-    { key: 'urgent', label: 'Urgent', color: 'var(--orange-500)' },
-    {
-      key: 'almost_complete',
-      label: 'Almost Complete',
-      color: '#16a34a',
-    },
-  ]
-
-  function update(field, value) {
-    setForm((f) => ({ ...f, [field]: value }))
-    if (errors[field]) setErrors((e) => ({ ...e, [field]: undefined }))
-  }
-
-  function validate() {
-    const e = {}
-    if (!form.title.trim()) e.title = 'Title is required'
-    if (!form.goal || Number(form.goal) <= 0)
-      e.goal = 'Goal must be greater than 0'
-    if (!form.description.trim())
-      e.description = 'Description is required'
-    if (!form.deadline) e.deadline = 'Pick a deadline'
-    if (!form.location.trim()) e.location = 'Location is required'
-    setErrors(e)
-    return Object.keys(e).length === 0
-  }
-
-  function handleSubmit() {
-    if (!validate()) return
-    onSave({
-      title: form.title.trim(),
-      category: form.category,
-      status: form.status,
-      goal: Number(form.goal),
-      deadline: form.deadline,
-      location: form.location.trim(),
-      beneficiaries: form.beneficiaries.trim() || 'Communities',
-      description: form.description.trim(),
-      image:
-        form.image.trim() ||
-        `https://placehold.co/800x400/eff4ff/1e40d8?text=${encodeURIComponent(
-          form.title.slice(0, 20) || 'Campaign'
-        )}`,
-      howItWillBeUsed: [
-        { label: 'Direct program costs', amount: Math.round(Number(form.goal) * 0.75) },
-        { label: 'Logistics & distribution', amount: Math.round(Number(form.goal) * 0.15) },
-        { label: 'Operations', amount: Math.round(Number(form.goal) * 0.10) },
-      ],
-      impactExamples: [
-        {
-          amount: 500,
-          description: `Supports a portion of "${form.title.slice(0, 40)}"`,
-        },
-        {
-          amount: 1000,
-          description: 'Doubles your contribution to the cause',
-        },
-        {
-          amount: 2500,
-          description: 'Funds a meaningful share of the campaign',
-        },
-      ],
-    })
-  }
-
+  const [title, setTitle] = useState('')
+  const [goal, setGoal] = useState('')
+  const [description, setDescription] = useState('')
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div
-        className="modal campaign-modal"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* HEADER */}
-        <div className="campaign-modal-header">
-          <div>
-            <div className="campaign-modal-eyebrow">
-              <Icon name="heart" size={12} /> New campaign
-            </div>
-            <h2 className="campaign-modal-title">Create a campaign</h2>
-            <p className="campaign-modal-subtitle">
-              Fill in the details below. Fields marked with * are required.
-            </p>
-          </div>
-          <button
-            className="btn btn-neutral btn-sm"
-            onClick={onClose}
-            style={{ padding: '6px 10px' }}
-            type="button"
-          >
-            <Icon name="x" size={14} />
-          </button>
-        </div>
-
-        {/* BODY */}
-        <div className="campaign-modal-body">
-          {/* SECTION 1 — BASICS */}
-          <div className="campaign-modal-section">
-            <div className="campaign-modal-section-title">
-              Campaign basics
-            </div>
-
-            <div className="field">
-              <div className="field-label-row">
-                <label>Title *</label>
-                <span className="field-hint">
-                  {form.title.length}/80
-                </span>
-              </div>
-              <input
-                className="input"
-                placeholder="e.g. School Supplies for 500 Kids"
-                value={form.title}
-                onChange={(e) => update('title', e.target.value)}
-                maxLength={80}
-              />
-              {errors.title && (
-                <div className="field-error">{errors.title}</div>
-              )}
-            </div>
-
-            <div className="field-row">
-              <div className="field">
-                <label>Category *</label>
-                <select
-                  className="input"
-                  value={form.category}
-                  onChange={(e) => update('category', e.target.value)}
-                >
-                  {CATEGORIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="field">
-                <label>Status *</label>
-                <div className="campaign-status-row">
-                  {STATUSES.map((s) => (
-                    <button
-                      key={s.key}
-                      type="button"
-                      className={`campaign-status-chip ${
-                        form.status === s.key ? 'active' : ''
-                      }`}
-                      onClick={() => update('status', s.key)}
-                      style={{
-                        borderColor:
-                          form.status === s.key ? s.color : 'var(--ink-100)',
-                        color:
-                          form.status === s.key ? s.color : 'var(--ink-700)',
-                      }}
-                    >
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* SECTION 2 — FUNDING */}
-          <div className="campaign-modal-section">
-            <div className="campaign-modal-section-title">
-              Funding target
-            </div>
-
-            <div className="field-row">
-              <div className="field">
-                <label>Goal (₱) *</label>
-                <input
-                  className="input"
-                  type="number"
-                  placeholder="50000"
-                  value={form.goal}
-                  onChange={(e) => update('goal', e.target.value)}
-                  min="1"
-                />
-                {errors.goal && (
-                  <div className="field-error">{errors.goal}</div>
-                )}
-              </div>
-
-              <div className="field">
-                <label>Deadline *</label>
-                <input
-                  className="input"
-                  type="date"
-                  value={form.deadline}
-                  onChange={(e) => update('deadline', e.target.value)}
-                />
-                {errors.deadline && (
-                  <div className="field-error">{errors.deadline}</div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* SECTION 3 — DETAILS */}
-          <div className="campaign-modal-section">
-            <div className="campaign-modal-section-title">
-              Campaign details
-            </div>
-
-            <div className="field-row">
-              <div className="field">
-                <label>Location *</label>
-                <input
-                  className="input"
-                  placeholder="e.g. Quezon City"
-                  value={form.location}
-                  onChange={(e) => update('location', e.target.value)}
-                />
-                {errors.location && (
-                  <div className="field-error">{errors.location}</div>
-                )}
-              </div>
-
-              <div className="field">
-                <label>Who it helps</label>
-                <input
-                  className="input"
-                  placeholder="e.g. 500 elementary students"
-                  value={form.beneficiaries}
-                  onChange={(e) => update('beneficiaries', e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="field">
-              <div className="field-label-row">
-                <label>Description *</label>
-                <span className="field-hint">
-                  {form.description.length}/500
-                </span>
-              </div>
-              <textarea
-                className="input"
-                rows={4}
-                placeholder="Explain the campaign and why it matters…"
-                value={form.description}
-                onChange={(e) => update('description', e.target.value)}
-                maxLength={500}
-              />
-              {errors.description && (
-                <div className="field-error">{errors.description}</div>
-              )}
-            </div>
-
-            <div className="field">
-              <label>Image URL (optional)</label>
-              <input
-                className="input"
-                placeholder="https://… or leave blank to use a placeholder"
-                value={form.image}
-                onChange={(e) => update('image', e.target.value)}
-              />
-            </div>
-
-            {/* live preview of the image */}
-            {form.image.trim() && (
-              <div className="campaign-modal-preview">
-                <div className="campaign-modal-preview-label">
-                  Image preview
-                </div>
-                <img
-                  src={form.image}
-                  alt=""
-                  className="campaign-modal-preview-img"
-                  onError={(e) => {
-                    e.target.parentElement.style.display = 'none'
-                  }}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* FOOTER */}
-        <div className="campaign-modal-footer">
-          <button
-            className="btn btn-neutral"
-            onClick={onClose}
-            type="button"
-          >
-            Cancel
-          </button>
-          <button
-            className="btn btn-primary btn-lg"
-            onClick={handleSubmit}
-            type="button"
-            style={{ flex: 1 }}
-          >
-            <Icon name="check" size={16} /> Publish campaign
-          </button>
-        </div>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <h3 style={{ marginTop: 0 }}>Create Campaign</h3>
+        <input
+          className="input"
+          placeholder="Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+        <input
+          className="input"
+          placeholder="Goal (₱)"
+          type="number"
+          value={goal}
+          onChange={(e) => setGoal(e.target.value)}
+          style={{ marginTop: 8 }}
+        />
+        <textarea
+          className="input"
+          rows={3}
+          placeholder="Description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          style={{ marginTop: 8 }}
+        />
+        <button
+          className="btn btn-primary btn-block"
+          style={{ marginTop: 12 }}
+          disabled={!title || !goal}
+          onClick={() =>
+            onSave({
+              title,
+              goal: Number(goal),
+              description,
+              category: 'Education',
+              deadline: '2026-12-31',
+              location: 'Philippines',
+              image:
+                'https://placehold.co/800x400/eff4ff/1e40d8?text=Campaign',
+            })
+          }
+          type="button"
+        >
+          Create
+        </button>
       </div>
     </div>
   )
