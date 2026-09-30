@@ -8956,3 +8956,102 @@ body,
 [data-theme='dark'] .home-left-see-all {
   color: #60a5fa;
 }
+
+/* =========================================================
+   NGO DETAIL — TWO-COLUMN LAYOUT WITH SIDEBAR
+   ========================================================= */
+
+.ngo-detail-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 28px;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .ngo-detail-layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
+.ngo-detail-main {
+  min-width: 0;
+}
+
+.ngo-detail-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: sticky;
+  top: 88px;
+}
+
+@media (max-width: 1024px) {
+  .ngo-detail-sidebar {
+    position: static;
+  }
+}
+
+/* ---------- at-a-glance rows ---------- */
+.ngo-glance-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--ink-50);
+  font-size: 13px;
+}
+
+.ngo-glance-row:last-child {
+  border-bottom: 0;
+}
+
+.ngo-glance-label {
+  color: var(--ink-500);
+  font-weight: 600;
+}
+
+.ngo-glance-value {
+  color: var(--ink-900);
+  font-weight: 800;
+  font-size: 13.5px;
+}
+
+[data-theme='dark'] .ngo-glance-row {
+  border-color: var(--ink-50);
+}
+
+[data-theme='dark'] .ngo-glance-value {
+  color: var(--ink-900);
+}
+
+/* =========================================================
+   AVATAR IMAGE — WHITE BACKGROUND VARIANT
+   ========================================================= */
+
+.home-left-avatar-img {
+  background: #ffffff !important;
+  padding: 6px;
+  box-sizing: border-box;
+  object-fit: contain;
+  border: 1px solid var(--ink-100);
+}
+
+/* also fix any other avatar images site-wide */
+.avatar-img {
+  background: #ffffff;
+  padding: 4px;
+  box-sizing: border-box;
+  object-fit: contain;
+}
+
+[data-theme='dark'] .home-left-avatar-img {
+  background: #ffffff !important;
+  border-color: #eef2f7;
+}
+
+[data-theme='dark'] .avatar-img {
+  background: #ffffff;
+}
