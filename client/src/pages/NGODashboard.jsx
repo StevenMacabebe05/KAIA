@@ -634,54 +634,328 @@ function PostModal({ onClose, onSave }) {
 }
 
 function CampaignModal({ onClose, onSave }) {
-  const [title, setTitle] = useState('')
-  const [goal, setGoal] = useState('')
-  const [description, setDescription] = useState('')
+  const [form, setForm] = useState({
+    title: '',
+    category: 'Education',
+    status: 'active',
+    goal: '',
+    deadline: '',
+    location: '',
+    beneficiaries: '',
+    description: '',
+    image: '',
+  })
+  const [errors, setErrors] = useState({})
+
+  const CATEGORIES = [
+    'Education',
+    'Children & Youth',
+    'Animal Welfare',
+    'Environment',
+    'Health',
+    'Disaster Relief',
+    'Community Development',
+    'Poverty Reduction',
+    'Humanitarian Aid',
+  ]
+
+  const STATUSES = [
+    { key: 'active', label: 'Active', color: 'var(--blue-700)' },
+    { key: 'urgent', label: 'Urgent', color: 'var(--orange-500)' },
+    {
+      key: 'almost_complete',
+      label: 'Almost Complete',
+      color: '#16a34a',
+    },
+  ]
+
+  function update(field, value) {
+    setForm((f) => ({ ...f, [field]: value }))
+    if (errors[field]) setErrors((e) => ({ ...e, [field]: undefined }))
+  }
+
+  function validate() {
+    const e = {}
+    if (!form.title.trim()) e.title = 'Title is required'
+    if (!form.goal || Number(form.goal) <= 0)
+      e.goal = 'Goal must be greater than 0'
+    if (!form.description.trim())
+      e.description = 'Description is required'
+    if (!form.deadline) e.deadline = 'Pick a deadline'
+    if (!form.location.trim()) e.location = 'Location is required'
+    setErrors(e)
+    return Object.keys(e).length === 0
+  }
+
+  function handleSubmit() {
+    if (!validate()) return
+    onSave({
+      title: form.title.trim(),
+      category: form.category,
+      status: form.status,
+      goal: Number(form.goal),
+      deadline: form.deadline,
+      location: form.location.trim(),
+      beneficiaries: form.beneficiaries.trim() || 'Communities',
+      description: form.description.trim(),
+      image:
+        form.image.trim() ||
+        `https://placehold.co/800x400/eff4ff/1e40d8?text=${encodeURIComponent(
+          form.title.slice(0, 20) || 'Campaign'
+        )}`,
+      howItWillBeUsed: [
+        { label: 'Direct program costs', amount: Math.round(Number(form.goal) * 0.75) },
+        { label: 'Logistics & distribution', amount: Math.round(Number(form.goal) * 0.15) },
+        { label: 'Operations', amount: Math.round(Number(form.goal) * 0.10) },
+      ],
+      impactExamples: [
+        {
+          amount: 500,
+          description: `Supports a portion of "${form.title.slice(0, 40)}"`,
+        },
+        {
+          amount: 1000,
+          description: 'Doubles your contribution to the cause',
+        },
+        {
+          amount: 2500,
+          description: 'Funds a meaningful share of the campaign',
+        },
+      ],
+    })
+  }
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h3 style={{ marginTop: 0 }}>Create Campaign</h3>
-        <input
-          className="input"
-          placeholder="Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-        <input
-          className="input"
-          placeholder="Goal (₱)"
-          type="number"
-          value={goal}
-          onChange={(e) => setGoal(e.target.value)}
-          style={{ marginTop: 8 }}
-        />
-        <textarea
-          className="input"
-          rows={3}
-          placeholder="Description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          style={{ marginTop: 8 }}
-        />
-        <button
-          className="btn btn-primary btn-block"
-          style={{ marginTop: 12 }}
-          disabled={!title || !goal}
-          onClick={() =>
-            onSave({
-              title,
-              goal: Number(goal),
-              description,
-              category: 'Education',
-              deadline: '2026-12-31',
-              image:
-                'https://placehold.co/800x400/eff4ff/1e40d8?text=Campaign',
-            })
-          }
-          type="button"
-        >
-          Create
-        </button>
+      <div
+        className="modal campaign-modal"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* HEADER */}
+        <div className="campaign-modal-header">
+          <div>
+            <div className="campaign-modal-eyebrow">
+              <Icon name="heart" size={12} /> New campaign
+            </div>
+            <h2 className="campaign-modal-title">Create a campaign</h2>
+            <p className="campaign-modal-subtitle">
+              Fill in the details below. Fields marked with * are required.
+            </p>
+          </div>
+          <button
+            className="btn btn-neutral btn-sm"
+            onClick={onClose}
+            style={{ padding: '6px 10px' }}
+            type="button"
+          >
+            <Icon name="x" size={14} />
+          </button>
+        </div>
+
+        {/* BODY */}
+        <div className="campaign-modal-body">
+          {/* SECTION 1 — BASICS */}
+          <div className="campaign-modal-section">
+            <div className="campaign-modal-section-title">
+              Campaign basics
+            </div>
+
+            <div className="field">
+              <div className="field-label-row">
+                <label>Title *</label>
+                <span className="field-hint">
+                  {form.title.length}/80
+                </span>
+              </div>
+              <input
+                className="input"
+                placeholder="e.g. School Supplies for 500 Kids"
+                value={form.title}
+                onChange={(e) => update('title', e.target.value)}
+                maxLength={80}
+              />
+              {errors.title && (
+                <div className="field-error">{errors.title}</div>
+              )}
+            </div>
+
+            <div className="field-row">
+              <div className="field">
+                <label>Category *</label>
+                <select
+                  className="input"
+                  value={form.category}
+                  onChange={(e) => update('category', e.target.value)}
+                >
+                  {CATEGORIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="field">
+                <label>Status *</label>
+                <div className="campaign-status-row">
+                  {STATUSES.map((s) => (
+                    <button
+                      key={s.key}
+                      type="button"
+                      className={`campaign-status-chip ${
+                        form.status === s.key ? 'active' : ''
+                      }`}
+                      onClick={() => update('status', s.key)}
+                      style={{
+                        borderColor:
+                          form.status === s.key ? s.color : 'var(--ink-100)',
+                        color:
+                          form.status === s.key ? s.color : 'var(--ink-700)',
+                      }}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* SECTION 2 — FUNDING */}
+          <div className="campaign-modal-section">
+            <div className="campaign-modal-section-title">
+              Funding target
+            </div>
+
+            <div className="field-row">
+              <div className="field">
+                <label>Goal (₱) *</label>
+                <input
+                  className="input"
+                  type="number"
+                  placeholder="50000"
+                  value={form.goal}
+                  onChange={(e) => update('goal', e.target.value)}
+                  min="1"
+                />
+                {errors.goal && (
+                  <div className="field-error">{errors.goal}</div>
+                )}
+              </div>
+
+              <div className="field">
+                <label>Deadline *</label>
+                <input
+                  className="input"
+                  type="date"
+                  value={form.deadline}
+                  onChange={(e) => update('deadline', e.target.value)}
+                />
+                {errors.deadline && (
+                  <div className="field-error">{errors.deadline}</div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* SECTION 3 — DETAILS */}
+          <div className="campaign-modal-section">
+            <div className="campaign-modal-section-title">
+              Campaign details
+            </div>
+
+            <div className="field-row">
+              <div className="field">
+                <label>Location *</label>
+                <input
+                  className="input"
+                  placeholder="e.g. Quezon City"
+                  value={form.location}
+                  onChange={(e) => update('location', e.target.value)}
+                />
+                {errors.location && (
+                  <div className="field-error">{errors.location}</div>
+                )}
+              </div>
+
+              <div className="field">
+                <label>Who it helps</label>
+                <input
+                  className="input"
+                  placeholder="e.g. 500 elementary students"
+                  value={form.beneficiaries}
+                  onChange={(e) => update('beneficiaries', e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="field">
+              <div className="field-label-row">
+                <label>Description *</label>
+                <span className="field-hint">
+                  {form.description.length}/500
+                </span>
+              </div>
+              <textarea
+                className="input"
+                rows={4}
+                placeholder="Explain the campaign and why it matters…"
+                value={form.description}
+                onChange={(e) => update('description', e.target.value)}
+                maxLength={500}
+              />
+              {errors.description && (
+                <div className="field-error">{errors.description}</div>
+              )}
+            </div>
+
+            <div className="field">
+              <label>Image URL (optional)</label>
+              <input
+                className="input"
+                placeholder="https://… or leave blank to use a placeholder"
+                value={form.image}
+                onChange={(e) => update('image', e.target.value)}
+              />
+            </div>
+
+            {/* live preview of the image */}
+            {form.image.trim() && (
+              <div className="campaign-modal-preview">
+                <div className="campaign-modal-preview-label">
+                  Image preview
+                </div>
+                <img
+                  src={form.image}
+                  alt=""
+                  className="campaign-modal-preview-img"
+                  onError={(e) => {
+                    e.target.parentElement.style.display = 'none'
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* FOOTER */}
+        <div className="campaign-modal-footer">
+          <button
+            className="btn btn-neutral"
+            onClick={onClose}
+            type="button"
+          >
+            Cancel
+          </button>
+          <button
+            className="btn btn-primary btn-lg"
+            onClick={handleSubmit}
+            type="button"
+            style={{ flex: 1 }}
+          >
+            <Icon name="check" size={16} /> Publish campaign
+          </button>
+        </div>
       </div>
     </div>
   )
