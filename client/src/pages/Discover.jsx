@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { NGOS } from '../data/ngos'
 import { CATEGORIES } from '../data/categories'
@@ -10,21 +10,60 @@ import VerifiedBadge from '../components/VerifiedBadge'
 import EmptyState from '../components/EmptyState'
 import Icon from '../components/Icon'
 
+const SORT_OPTIONS = [
+  { key: 'featured', label: 'Featured' },
+  { key: 'newest', label: 'Newest' },
+  { key: 'oldest', label: 'Oldest' },
+  { key: 'az', label: 'A → Z' },
+  { key: 'za', label: 'Z → A' },
+  { key: 'supporters', label: 'Most supporters' },
+]
+
 export default function Discover() {
   const { user } = useAuth()
   const store = useActivity()
   const [category, setCategory] = useState('All')
   const [query, setQuery] = useState('')
+  const [sort, setSort] = useState('featured')
+  const [sortOpen, setSortOpen] = useState(false)
 
-  const filtered = NGOS.filter((n) => {
-    const matchesCategory =
-      category === 'All' || n.categories.includes(category)
-    const matchesQuery =
-      query === '' || n.name.toLowerCase().includes(query.toLowerCase())
-    return matchesCategory && matchesQuery
-  })
+  const filtered = useMemo(() => {
+    let list = NGOS.filter((n) => {
+      const matchesCategory =
+        category === 'All' || n.categories.includes(category)
+      const matchesQuery =
+        query === '' || n.name.toLowerCase().includes(query.toLowerCase())
+      return matchesCategory && matchesQuery
+    })
 
-    return (
+    const sorters = {
+      featured: (a, b) => {
+        if (a.isDeep && !b.isDeep) return -1
+        if (!a.isDeep && b.isDeep) return 1
+        return b.supporterCount - a.supporterCount
+      },
+      newest: (a, b) => {
+        const da = new Date(a.createdAt || 0).getTime()
+        const db = new Date(b.createdAt || 0).getTime()
+        return db - da
+      },
+      oldest: (a, b) => {
+        const da = new Date(a.createdAt || 0).getTime()
+        const db = new Date(b.createdAt || 0).getTime()
+        return da - db
+      },
+      az: (a, b) => a.name.localeCompare(b.name),
+      za: (a, b) => b.name.localeCompare(a.name),
+      supporters: (a, b) => b.supporterCount - a.supporterCount,
+    }
+
+    return [...list].sort(sorters[sort] || sorters.featured)
+  }, [category, query, sort])
+
+  const activeSortLabel =
+    SORT_OPTIONS.find((o) => o.key === sort)?.label || 'Featured'
+
+  return (
     <div className="container-wide">
       <div className="page-header">
         <h1 className="page-title">Discover NGOs</h1>
@@ -34,7 +73,8 @@ export default function Discover() {
         </p>
       </div>
 
-      <div className="filters">
+      {/* ---------- TOOLBAR ---------- */}
+      <div className="donate-toolbar">
         <div className="search">
           <span className="search-icon">
             <Icon name="search" size={16} />
@@ -45,8 +85,54 @@ export default function Discover() {
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
+
+        <div className="sort-dropdown">
+          <button
+            className="sort-trigger"
+            onClick={() => setSortOpen((o) => !o)}
+            type="button"
+          >
+            <span className="sort-label">Sort:</span>
+            <span className="sort-value">{activeSortLabel}</span>
+            <Icon name="chevron-down" size={14} />
+          </button>
+
+          {sortOpen && (
+            <>
+              <div
+                className="sort-backdrop"
+                onClick={() => setSortOpen(false)}
+              />
+              <div className="sort-menu">
+                {SORT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.key}
+                    className={`sort-option ${
+                      sort === opt.key ? 'active' : ''
+                    }`}
+                    onClick={() => {
+                      setSort(opt.key)
+                      setSortOpen(false)
+                    }}
+                    type="button"
+                  >
+                    {opt.label}
+                    {sort === opt.key && (
+                      <Icon
+                        name="check"
+                        size={14}
+                        color="var(--blue-700)"
+                      />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
+      {/* ---------- CATEGORY FILTERS ---------- */}
       <div className="filters">
         <button
           className={`pill ${category === 'All' ? 'is-active' : ''}`}
@@ -67,6 +153,27 @@ export default function Discover() {
         ))}
       </div>
 
+      {/* ---------- RESULTS COUNT ---------- */}
+      <div className="donate-results">
+        <span>
+          {filtered.length}{' '}
+          {filtered.length === 1 ? 'NGO' : 'NGOs'} found
+        </span>
+        {(query || category !== 'All') && (
+          <button
+            className="donate-clear"
+            onClick={() => {
+              setQuery('')
+              setCategory('All')
+            }}
+            type="button"
+          >
+            Clear filters
+          </button>
+        )}
+      </div>
+
+      {/* ---------- RESULTS ---------- */}
       {filtered.length === 0 ? (
         <EmptyState
           icon="search"
@@ -86,133 +193,113 @@ export default function Discover() {
           ]}
         />
       ) : (
-        <>
-          <div className="donate-results">
-            <span>
-              {query || category !== 'All'
-                ? `${filtered.length} ${
-                    filtered.length === 1 ? 'NGO' : 'NGOs'
-                  } found`
-                : 'Explore organizations you may want to follow'}
-            </span>
-            {(query || category !== 'All') && (
-              <button
-                className="donate-clear"
-                onClick={() => {
-                  setQuery('')
-                  setCategory('All')
-                }}
-                type="button"
-              >
-                Clear filters
-              </button>
-            )}
-          </div>
+        <div className="grid grid-3">
+          {filtered.map((ngo) => {
+            const following = user
+              ? store.isFollowing(user.id, ngo.id)
+              : false
 
-          <div className="grid grid-3">
-            {filtered.map((ngo) => {
-              const following = user
-                ? store.isFollowing(user.id, ngo.id)
-                : false
+            return (
+              <article key={ngo.id} className="ngo-card">
+                <Link to={`/ngo/${ngo.id}`} className="ngo-card-cover">
+                  <img
+                    src={ngo.cover}
+                    alt=""
+                    className="ngo-card-cover-img"
+                    onError={(e) => {
+                      e.target.onerror = null
+                      e.target.src = `https://placehold.co/800x400/eff4ff/1e40d8?text=${encodeURIComponent(
+                        ngo.name
+                      )}`
+                    }}
+                  />
+                  <div className="ngo-card-cover-overlay" />
+                  {ngo.isDeep && (
+                    <span className="ngo-card-featured">
+                      <Icon name="trending" size={11} /> Featured
+                    </span>
+                  )}
+                </Link>
 
-              return (
-                <article key={ngo.id} className="ngo-card">
-                  <Link to={`/ngo/${ngo.id}`} className="ngo-card-cover">
-                    <img
-                      src={ngo.cover}
-                      alt=""
-                      className="ngo-card-cover-img"
-                      onError={(e) => {
-                        e.target.onerror = null
-                        e.target.src = `https://placehold.co/800x400/eff4ff/1e40d8?text=${encodeURIComponent(
-                          ngo.name
-                        )}`
-                      }}
-                    />
-                    <div className="ngo-card-cover-overlay" />
-                    {ngo.isDeep && (
-                      <span className="ngo-card-featured">
-                        <Icon name="trending" size={11} /> Featured
-                      </span>
-                    )}
+                <div className="ngo-card-body">
+                  <div className="ngo-card-logo-row">
+                    <Link to={`/ngo/${ngo.id}`}>
+                      <img
+                        src={ngo.logo}
+                        alt=""
+                        className="ngo-card-logo"
+                        onError={(e) => {
+                          e.target.onerror = null
+                          e.target.style.display = 'none'
+                        }}
+                      />
+                    </Link>
+                    <VerifiedBadge verified={ngo.verified} />
+                  </div>
+
+                  <Link to={`/ngo/${ngo.id}`} className="ngo-card-name">
+                    {ngo.name}
                   </Link>
 
-                  <div className="ngo-card-body">
-                    <div className="ngo-card-logo-row">
-                      <Link to={`/ngo/${ngo.id}`}>
-                        <img
-                          src={ngo.logo}
-                          alt=""
-                          className="ngo-card-logo"
-                        />
-                      </Link>
-                      <VerifiedBadge verified={ngo.verified} />
-                    </div>
+                  <div className="ngo-card-cats">
+                    {ngo.categories.map((c) => (
+                      <span key={c} className="ngo-card-cat">
+                        {c}
+                      </span>
+                    ))}
+                  </div>
 
-                    <Link to={`/ngo/${ngo.id}`} className="ngo-card-name">
-                      {ngo.name}
-                    </Link>
+                  <p className="ngo-card-tagline">{ngo.tagline}</p>
 
-                    <div className="ngo-card-cats">
-                      {ngo.categories.map((c) => (
-                        <span key={c} className="ngo-card-cat">
-                          {c}
-                        </span>
-                      ))}
-                    </div>
-
-                    <p className="ngo-card-tagline">{ngo.tagline}</p>
-
-                    <div className="ngo-card-stats">
-                      <div className="ngo-card-stat">
-                        <div className="ngo-card-stat-value">
-                          {ngo.supporterCount > 999
-                            ? `${(ngo.supporterCount / 1000).toFixed(1)}k`
-                            : ngo.supporterCount}
-                        </div>
-                        <div className="ngo-card-stat-label">Supporters</div>
+                  <div className="ngo-card-stats">
+                    <div className="ngo-card-stat">
+                      <div className="ngo-card-stat-value">
+                        {ngo.supporterCount > 999
+                          ? `${(ngo.supporterCount / 1000).toFixed(1)}k`
+                          : ngo.supporterCount}
                       </div>
-                      <div className="ngo-card-stat">
-                        <div className="ngo-card-stat-value">
-                          {CAMPAIGNS.filter((c) => c.ngoId === ngo.id).length}
-                        </div>
-                        <div className="ngo-card-stat-label">Campaigns</div>
-                      </div>
-                      <div className="ngo-card-stat">
-                        <div className="ngo-card-stat-value">
-                          {POSTS.filter((p) => p.ngoId === ngo.id).length}
-                        </div>
-                        <div className="ngo-card-stat-label">Posts</div>
-                      </div>
+                      <div className="ngo-card-stat-label">Supporters</div>
                     </div>
-
-                    <div className="ngo-card-cta-row">
-                      {user && (
-                        <button
-                          type="button"
-                          className={`btn ${
-                            following ? 'btn-ghost' : 'btn-primary'
-                          } ngo-card-cta`}
-                          onClick={() =>
-                            store.toggleFollow(user.id, ngo.id)
-                          }
-                        >
-                          {following ? 'Following' : 'Follow'}
-                        </button>
-                      )}
-                      <Link
-                        to={`/ngo/${ngo.id}`}
-                        className="ngo-card-view ngo-card-cta"
-                      >
-                        View profile <Icon name="arrow-right" size={13} />
-                      </Link>
+                    <div className="ngo-card-stat">
+                      <div className="ngo-card-stat-value">
+                        {CAMPAIGNS.filter((c) => c.ngoId === ngo.id).length}
+                      </div>
+                      <div className="ngo-card-stat-label">Campaigns</div>
+                    </div>
+                    <div className="ngo-card-stat">
+                      <div className="ngo-card-stat-value">
+                        {POSTS.filter((p) => p.ngoId === ngo.id).length}
+                      </div>
+                      <div className="ngo-card-stat-label">Posts</div>
                     </div>
                   </div>
-                </article>
-              )
-            })}
-          </div>
-        </>
+
+                  <div className="ngo-card-cta-row">
+                    {user && (
+                      <button
+                        type="button"
+                        className={`btn ${
+                          following ? 'btn-ghost' : 'btn-primary'
+                        } ngo-card-cta`}
+                        onClick={() =>
+                          store.toggleFollow(user.id, ngo.id)
+                        }
+                      >
+                        {following ? 'Following' : 'Follow'}
+                      </button>
+                    )}
+                    <Link
+                      to={`/ngo/${ngo.id}`}
+                      className="ngo-card-view ngo-card-cta"
+                    >
+                      View profile <Icon name="arrow-right" size={13} />
+                    </Link>
+                  </div>
+                </div>
+              </article>
+            )
+          })}
+        </div>
       )}
     </div>
   )
