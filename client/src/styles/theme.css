@@ -9849,3 +9849,19 @@ body,
   background: #0b1220;
   border-color: #60a5fa;
 }
+
+/* =========================================================
+   VOLUNTEER CARD — 2-LINE DESCRIPTION CLAMP
+   ========================================================= */
+
+.volunteer-card-body p,
+.volunteer-card-list .volunteer-card-body p {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: calc(1.55em * 2);
+  margin-bottom: 16px !important;
+}
