@@ -39,30 +39,9 @@ const SEED_NOTIFICATIONS = [
 ]
 
 const SEED_COMMENTS = [
-  {
-    id: 'sc-1',
-    postId: 'p-call',
-    userId: 'u-fake-1',
-    userName: 'Maria Santos',
-    text: 'Count me in! Will bring 3 friends from our org 💪',
-    createdAt: days(0.1),
-  },
-  {
-    id: 'sc-2',
-    postId: 'p-call',
-    userId: 'u-fake-2',
-    userName: 'Jose Reyes',
-    text: 'Just registered. See you all at Ateneo this afternoon!',
-    createdAt: days(0.2),
-  },
-  {
-    id: 'sc-3',
-    postId: 'p-paws',
-    userId: 'u-fake-3',
-    userName: 'Andrea Cruz',
-    text: 'Donated 100 points! Happy to help the kapon program 💚',
-    createdAt: days(0.1),
-  },
+    { id: 'sh-6', postId: 'p-caritas', userId: 'u-fake-1', sharedAt: days(0.03) },
+  { id: 'sh-7', postId: 'p-caritas', userId: 'u-fake-2', sharedAt: days(0.05) },
+  { id: 'sh-8', postId: 'p-greenpeace', userId: 'u-fake-3', sharedAt: days(0.04) },
 ]
 
 const SEED_FOLLOWS = [
